@@ -76,7 +76,14 @@ namespace Cuvara.UIToolkit.Flow
         /// <summary>Applies graphics settings to Unity runtime.</summary>
         public void Apply()
         {
-            AudioListener.volume = MasterVolume;
+            // AudioListener requires com.unity.modules.audio — guard for standalone installs
+            var listenerType = System.Type.GetType("UnityEngine.AudioListener, UnityEngine.AudioModule");
+            if (listenerType != null)
+            {
+                var volumeProp = listenerType.GetProperty("volume", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                volumeProp?.SetValue(null, MasterVolume);
+            }
+
             QualitySettings.SetQualityLevel(GraphicsQuality, true);
             Screen.fullScreen = Fullscreen;
             QualitySettings.vSyncCount = VSync ? 1 : 0;
