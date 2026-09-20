@@ -5,6 +5,25 @@ All notable changes to this package are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **CI: pinned `game-ci/unity-test-runner` to `v4.3.1`.** `Unity Tests`, `Compile samples`
+  and `Install probe (documented)` all fail with `[ERROR] Error: fatal: not a git repository
+  (or any of the parent directories): .git` — `game-ci test` exits before Unity runs, so
+  everything downstream reports a consequence rather than a cause.
+
+  The workflow used the floating `@v4` tag. **`v4.4.0` was published 2026-09-09** and
+  delegates to `game-ci/cli`, which requires a git repository in its working directory.
+  Nothing in this repository changed; the action moved underneath it.
+
+  Confirmed by re-running this repo's last green `main` run (33989076995, 2026-09-05)
+  today on an unchanged commit: three jobs fail with the identical error. Same root cause
+  and fix as Cuvara/UnityDots#32, found by grepping the remaining repositories for the
+  floating tag after fixing that one — this repo's CI had not run since 2026-09-05, so it
+  was broken and silent rather than broken and red.
+
 ## [0.7.2] - 2026-09-06
 
 ### Fixed
