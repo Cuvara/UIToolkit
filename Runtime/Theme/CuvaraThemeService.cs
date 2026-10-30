@@ -20,6 +20,8 @@ namespace Cuvara.UIToolkit.Theme
         private readonly StyleSheet baseSheet;
         private readonly List<StyleSheet> overrides = new();
         private readonly List<VisualElement> roots = new();
+        private readonly List<VisualElement> screens = new();
+        private readonly List<StyleSheet> knownModeSheets = new();
         private StyleSheet modeSheet;
 
         /// <summary>Uses <see cref="CuvaraTheme.DefaultStyleSheet"/> as the base.</summary>
@@ -58,12 +60,42 @@ namespace Cuvara.UIToolkit.Theme
         }
 
         /// <inheritdoc />
+        public void Remove(VisualElement root)
+        {
+            if (root == null) throw new ArgumentNullException(nameof(root));
+            if (!this.roots.Remove(root)) return;
+
+            var sheets = root.styleSheets;
+            if (this.baseSheet != null) sheets.Remove(this.baseSheet);
+            foreach (var sheet in this.overrides) sheets.Remove(sheet);
+            if (this.modeSheet != null) sheets.Remove(this.modeSheet);
+            root.RemoveFromClassList(CuvaraTheme.ThemeRootUssClassName);
+        }
+
+        /// <inheritdoc />
+        public void RegisterModeSheets(params StyleSheet[] modeSheets)
+        {
+            if (modeSheets == null) return;
+
+            var added = false;
+            foreach (var sheet in modeSheets)
+            {
+                if (sheet == null || this.knownModeSheets.Contains(sheet)) continue;
+                this.knownModeSheets.Add(sheet);
+                added = true;
+            }
+
+            if (added) this.SyncScreens();
+        }
+
+        /// <inheritdoc />
         public void SetModeSheet(StyleSheet sheet)
         {
             if (sheet == this.modeSheet) return;
 
             var previous = this.modeSheet;
             this.modeSheet = sheet;
+            if (sheet != null && !this.knownModeSheets.Contains(sheet)) this.knownModeSheets.Add(sheet);
 
             if (previous != null && previous != this.baseSheet && !this.overrides.Contains(previous))
             {
@@ -73,9 +105,78 @@ namespace Cuvara.UIToolkit.Theme
             this.SyncAll();
         }
 
+        /// <inheritdoc />
+        public IDisposable AttachScreen(VisualElement screenRoot)
+        {
+            if (screenRoot == null) throw new ArgumentNullException(nameof(screenRoot));
+
+            if (!this.screens.Contains(screenRoot)) this.screens.Add(screenRoot);
+            this.SyncScreen(screenRoot);
+
+            return new ScreenAttachment(this, screenRoot);
+        }
+
         private void SyncAll()
         {
             foreach (var root in this.roots) this.Sync(root);
+            this.SyncScreens();
+        }
+
+        private void SyncScreens()
+        {
+            foreach (var screen in this.screens) this.SyncScreen(screen);
+        }
+
+        /// <summary>
+        /// Inside an imported screen, swaps every element's registered mode sheet for the current
+        /// one, in the same position, so the screen's own sheet order (tokens, mode, screen) holds.
+        /// A screen that links no mode sheet is left alone: it never asked for one. Without a
+        /// current mode the service has no opinion, so screens keep whatever they link.
+        /// </summary>
+        private void SyncScreen(VisualElement screenRoot)
+        {
+            if (this.knownModeSheets.Count == 0 || this.modeSheet == null) return;
+
+            screenRoot.Query<VisualElement>().ForEach(element =>
+            {
+                var sheets = element.styleSheets;
+                if (sheets.count == 0) return;
+
+                var linked = new List<StyleSheet>(sheets.count);
+                var placed = false;
+                var changed = false;
+                for (var i = 0; i < sheets.count; i++)
+                {
+                    var sheet = sheets[i];
+                    if (sheet == null || !this.knownModeSheets.Contains(sheet))
+                    {
+                        linked.Add(sheet);
+                        continue;
+                    }
+
+                    // The first mode link becomes the current mode, in place; any further one goes.
+                    if (!placed)
+                    {
+                        linked.Add(this.modeSheet);
+                        placed = true;
+                        if (sheet != this.modeSheet) changed = true;
+                    }
+                    else
+                    {
+                        changed = true;
+                    }
+                }
+
+                if (!changed) return;
+
+                sheets.Clear();
+                foreach (var sheet in linked) sheets.Add(sheet);
+            });
+        }
+
+        private void Detach(VisualElement screenRoot)
+        {
+            this.screens.Remove(screenRoot);
         }
 
         /// <summary>Re-establishes base, overrides, mode as the last sheets on <paramref name="root"/>, once each.</summary>
@@ -104,6 +205,25 @@ namespace Cuvara.UIToolkit.Theme
                 if (element == root) element.RemoveFromClassList(CuvaraTheme.LocalThemeUssClassName);
                 else CuvaraTheme.RemoveLocal(element);
             });
+        }
+
+        /// <summary>Ends <see cref="AttachScreen"/> tracking; idempotent.</summary>
+        private sealed class ScreenAttachment : IDisposable
+        {
+            private CuvaraThemeService owner;
+            private readonly VisualElement screenRoot;
+
+            public ScreenAttachment(CuvaraThemeService owner, VisualElement screenRoot)
+            {
+                this.owner      = owner;
+                this.screenRoot = screenRoot;
+            }
+
+            public void Dispose()
+            {
+                this.owner?.Detach(this.screenRoot);
+                this.owner = null;
+            }
         }
     }
 }
