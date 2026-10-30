@@ -222,6 +222,17 @@ folder, for either source.
 
 ## Supported and unsupported Figma features
 
+> **Designer rule: bind Figma variables on components, not on plain frames.** On Unity 6000.3,
+> UI Toolkit cannot clone a UXML whose inline `style="..."` contains `var(...)`: `CloneTree`
+> throws a `NullReferenceException` in `StyleVariableResolver.ResolveVariable` when the view is
+> created (verified on 6000.3.9f1; Unity's documentation lists variables as unsupported in
+> inline styles). Connector `0.3.0-exp.1` writes a bound property of a non-component layer as
+> inline `var(--token)`. Put variable-bound styling on Figma **components**: the component's
+> values land in class rules in its `.uss`, where `var()` works. Instances carry an inline delta
+> for their overrides, so do not bind a variable as a per-instance override either. The
+> inline-var validator rule reports every such `style` attribute as an error before the screen
+> is opened.
+
 What survives an import with connector `0.3.0-exp.1` on Unity 6000.3. Sources: the connector's
 own documentation and source (audit §2), and its troubleshooting page.
 
@@ -250,6 +261,8 @@ own documentation and source (audit §2), and its troubleshooting page.
 | Component properties: TEXT, BOOLEAN | supported | bindable to UXML attributes through mapping rows |
 | Component properties: instance swap | **dropped** | not passed to mapping rows |
 | Variables: COLOR, FLOAT | supported | `tokens.uss` and one `<mode>.uss` per mode; bound properties become `var(--token)` |
+| Variables bound on a component | supported | `var(--token)` in the component's class rules |
+| Variables bound on a plain frame or layer (not a component) | **breaks the screen** | written as inline `var(--token)`, which UI Toolkit 6000.3 cannot clone (`NullReferenceException` in `StyleVariableResolver.ResolveVariable`); the inline-var validator rule reports it |
 | Variables: STRING, BOOLEAN | **dropped** | never written to a token sheet |
 | Multiple variable modes | supported | needs a paid Figma plan (Free has one mode per collection) |
 | Unbound properties | literal | hard-coded values; the theme cannot reach them (`FIG020`) |
@@ -269,6 +282,9 @@ own documentation and source (audit §2), and its troubleshooting page.
   (`style="..."`); instances carry a class plus an inline delta. Theme variables reach only the
   values that were bound to Figma variables (`var(--token)`); unbound values stay literals. The
   validator reports inline-style and unbound-literal counts.
+- **No `var()` in inline styles.** A variable bound on a plain layer becomes inline
+  `var(--token)`, and UI Toolkit 6000.3 throws while cloning that UXML. Bind variables on
+  components only (see the designer rule above).
 - **Moving an import folder breaks image URLs.** The connector writes absolute
   `project://database/Assets/...?guid=...` image URLs. After you move `Assets/Figma/<file>/`, each
   one still names the old path, and the validator, which checks the path only, reports every one

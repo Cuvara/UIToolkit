@@ -82,7 +82,7 @@ from the design, so fix them in Figma and push again: the next push rewrites eve
 | `FIG006` USS not well formed | Same as `FIG005`, for a `.uss`. |
 | `FIG007` folder missing | Wrong path. Pass the connector's folder, normally `Assets/Figma/<file>`. |
 | `FIG010` class prefix | The connector's **USS class prefix** differs from the profile's (or `--prefix`). See [Two games, two prefixes](#two-games-two-prefixes). |
-| `FIG020` literal colour | The Figma property is not bound to a variable, so it imports as a literal. Bind it to a colour variable in Figma. Turn the rule off with `--no-token-colors` if your project accepts literals. |
+| `FIG020` literal colour | The Figma property is not bound to a variable, so it imports as a literal. Bind it to a colour variable in Figma, **on a component** (a binding on a plain layer becomes inline `var()`, which breaks the screen; see [the `StyleVariableResolver` section](#creating-a-view-throws-nullreferenceexception-in-stylevariableresolverresolvevariable)). Turn the rule off with `--no-token-colors` if your project accepts literals. |
 | `FIG021` summary | Count of `FIG020`. No action. |
 | `FIG022` undefined token | See [Tokens do not resolve](#tokens-do-not-resolve). |
 | `FIG030` too many inline styles | Above `--max-inline`. Non-component elements carry their whole style inline; turn repeated parts into Figma components so they get a class. |
@@ -211,6 +211,29 @@ The plug-in rasterises vectors and image fills to PNG. They import as plain text
 - **Icons all one colour.** Each icon component exports as one PNG that every instance shares,
   so per-instance colour overrides are lost. Use one icon component per colour.
 
+## Creating a view throws `NullReferenceException` in `StyleVariableResolver.ResolveVariable`
+
+**Symptoms.** Opening an imported screen (any `CloneTree` / `Instantiate` of its UXML) throws a
+`NullReferenceException` with `StyleVariableResolver.ResolveVariable` in the stack. The screen
+does not appear.
+
+**Cause.** The UXML has `var(--token)` inside an inline `style="..."` attribute. UI Toolkit
+6000.3 does not support variables in inline styles and fails while cloning (verified on
+6000.3.9f1). Connector `0.3.0-exp.1` writes a variable-bound property of a **non-component**
+layer that way: plain layers carry their whole style inline.
+
+**Fix.**
+
+1. Run the validator on the import folder. The inline-var validator rule reports every
+   `style` attribute with `var(...)`, with file and line, as an error.
+2. In Figma, move the bound styling onto a **component**: make the layer a component, or bind
+   the variable on the component master. A component's values land in class rules in its
+   `.uss`, where `var()` works. Do not bind a variable as a per-instance override, because
+   instance overrides are written inline too.
+3. Push the frame again. Do not edit the generated UXML: the next push rewrites it.
+
+The designer rule is in [FIGMA-INTEGRATION.md](FIGMA-INTEGRATION.md#supported-and-unsupported-figma-features).
+
 ## Tokens do not resolve
 
 Symptoms: `FIG022`, `cuvara.bridge.figma-token-unknown`, or the built-in dialog and toasts keep
@@ -222,7 +245,7 @@ the default colours although the bridge sheet is attached.
 - **Variable type.** Only colour and number variables import. STRING and BOOLEAN variables are
   dropped, so a token mapped to one never exists.
 - **Not bound.** A Figma property that is not bound to a variable imports as a literal and
-  cannot be themed (`FIG020`). Bind it in Figma.
+  cannot be themed (`FIG020`). Bind it in Figma, on a component, not on a plain layer.
 - **Sheet order.** The bridge only aliases (`--cuvara-color-primary: var(--brand-primary)`), so
   `tokens.uss` must be attached at the same root. Set `RootUIDocument.themeOverrides` to
   `[tokens.uss, cuvara-theme-bridge.uss]` and `themeModeSheet` to the mode sheet. The
