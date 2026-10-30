@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5332e465e42a4589b1b02defba3f2b4e, type: 3}
   m_Name: ShopFigmaProfile
   m_EditorClassIdentifier: Cuvara.UIToolkit.Editor.Figma::Cuvara.UIToolkit.Editor.Figma.FigmaProfile
-  connectorFolder: Assets/Samples/Cuvara UI Toolkit/0.7.2/Figma Import/ConnectorOutput
+  connectorFolder: Assets/Samples/Cuvara UI Toolkit/0.8.0/Figma Import/ConnectorOutput
   classPrefix: shop
   tokenRoles:
   - cuvaraToken: --cuvara-color-surface
@@ -55,9 +55,9 @@ MonoBehaviour:
     figmaToken:
   - cuvaraToken: --cuvara-font-size-md
     figmaToken:
-  bridgeOutputFolder: Assets/Samples/Cuvara UI Toolkit/0.7.2/Figma Import/Theme
+  bridgeOutputFolder: Assets/Samples/Cuvara UI Toolkit/0.8.0/Figma Import/Theme
   modeSheets:
   - light.uss
   - dark.uss
   screensNamespace: Cuvara.UIToolkit.Samples.FigmaImport
-  screensFolder: Assets/Samples/Cuvara UI Toolkit/0.7.2/Figma Import
+  screensFolder: Assets/Samples/Cuvara UI Toolkit/0.8.0/Figma Import
