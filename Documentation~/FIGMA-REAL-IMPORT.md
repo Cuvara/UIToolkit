@@ -106,7 +106,10 @@ python3 Packages/com.cuvara.uitoolkit/Tools~/FigmaImport/figma-import.py "<frame
 - Content: the connector's `FigmaImportResult` as `figma_import_status` returned it. For a request
   that never got one (refused, expired), the reply's `ok`, `code` and `error`. Beside it a
   `request` object with what only the helper knows: `requestId`, `state`, `code`, `error`,
-  `reason`, `fileName`, `nodeId`, `url`, `savedAt` (UTC).
+  `reason`, `fileName`, `nodeId`, `url`, `savedAt` (UTC), `finished`.
+- When `--max-wait` runs out while the request is still `queued`, `exporting` or `importing`, the
+  helper exits 1 and still saves the attempt: `ok` false, no code, no import result,
+  `request.finished` false and `request.waitedSeconds`. The request may still complete in Unity.
 - A save failure is a warning; the exit code still describes the import. `--dry-run` saves nothing.
 
 `Editor/FigmaCore/FigmaImportResultReader.cs` (Unity-free, also compiled into the CLI) turns a saved
@@ -119,7 +122,8 @@ profile. The window re-reads saved results when it gets focus.
 | Code | Severity | When |
 |---|---|---|
 | `cuvara.import.summary` | Info | Always: file, time, state, files written and removed, duration |
-| `cuvara.import.failed` | Error | `ok` is false: the code, the error and the plugin's reason |
+| `cuvara.import.incomplete` | Warning | The helper stopped waiting while the request was still `queued`, `exporting` or `importing` (no result yet) |
+| `cuvara.import.failed` | Error | `ok` is false on a finished request: the code, the error and the plugin's reason |
 | `cuvara.import.schema-mismatch` | Error | `schemaMismatch`: plugin and connector speak different wire schemas |
 | `cuvara.import.uss-errors` | Error | `ussErrors`: Unity reported errors in generated USS |
 | `cuvara.import.file-not-imported` | Error | One per `invalidFiles` entry, pointing at the file |

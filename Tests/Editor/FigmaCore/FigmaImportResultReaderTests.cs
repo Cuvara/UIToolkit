@@ -126,6 +126,47 @@ namespace Cuvara.UIToolkit.Editor.Tests.FigmaCore
             Assert.That(diagnostics.Single(d => d.Code == FigmaImportResultReader.CodeFailed).Message, Does.Contain("plugin_not_connected"));
         }
 
+        // What figma-import.py saves when --max-wait runs out while the request is still open.
+        private const string TimedOutSaved = @"{
+    ""ok"": false,
+    ""request"": { ""requestId"": ""r-1a2b3c4d"", ""state"": ""exporting"", ""code"": """", ""error"": """", ""reason"": """",
+                   ""fileName"": ""Shop Demo"", ""nodeId"": ""12:34"", ""url"": ""https://www.figma.com/design/AbC123/Shop-Demo?node-id=12-34"",
+                   ""savedAt"": ""2026-10-30T15:00:00Z"", ""helper"": ""figma-import.py"", ""finished"": false, ""waitedSeconds"": 600.0 }
+}";
+
+        [TestCase("queued")]
+        [TestCase("exporting")]
+        [TestCase("importing")]
+        public void ToDiagnostics_AnUnfinishedRequest_IsOneIncompleteWarning_NotAFailure(string state)
+        {
+            var info = FigmaImportResultReader.Read(TimedOutSaved.Replace("\"exporting\"", "\"" + state + "\""));
+            var diagnostics = FigmaImportResultReader.ToDiagnostics(info, "saved.json");
+
+            Assert.That(info.Finished, Is.False);
+            Assert.That(info.State, Is.EqualTo(state));
+            Assert.That(FigmaDiagnostics.Count(diagnostics, FigmaDiagnosticSeverity.Error), Is.EqualTo(0));
+            var incomplete = diagnostics.Single(d => d.Code == FigmaImportResultReader.CodeIncomplete);
+            Assert.That(incomplete.Severity, Is.EqualTo(FigmaDiagnosticSeverity.Warning));
+            Assert.That(incomplete.Message, Does.Contain("r-1a2b3c4d").And.Contain(state));
+            Assert.That(diagnostics.Single(d => d.Code == FigmaImportResultReader.CodeSummary).Message, Does.Contain("incomplete"));
+        }
+
+        [Test]
+        public void Read_AnOpenStatusReply_IsUnfinished_EvenWithoutTheHelperFlag()
+        {
+            var info = FigmaImportResultReader.Read(@"{ ""ok"": true, ""requestId"": ""r-1"", ""state"": ""queued"", ""retryAfterSeconds"": 5 }");
+            Assert.That(info.Finished, Is.False);
+            Assert.That(FigmaImportResultReader.ToDiagnostics(info, "f").Any(d => d.Code == FigmaImportResultReader.CodeIncomplete), Is.True);
+        }
+
+        [Test]
+        public void Read_FinishedResults_AreFinished()
+        {
+            Assert.That(FigmaImportResultReader.Read(DoneReply).Finished, Is.True);
+            Assert.That(FigmaImportResultReader.Read(FilesNotImportedReply).Finished, Is.True);
+            Assert.That(FigmaImportResultReader.Read(RefusalSaved).Finished, Is.True);
+        }
+
         [Test]
         public void Read_UnwrapsAPipelineEnvelope()
         {
