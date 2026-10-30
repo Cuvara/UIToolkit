@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Figma import validator** (`Editor/FigmaCore/`, namespace `Cuvara.UIToolkit.FigmaCore`).
+  Checks one `com.unity.ui.figma` import folder (connector `0.3.0-exp.1`) against package
+  rules: manifest integrity, USS class prefix, literal colours where a token is expected,
+  undefined `var(--token)`, inline-style and absolute-position budgets, unresolved `url()`
+  and `<Style>`/`<Template>` sources. Stable codes `FIG001`-`FIG051`. Unity-free like
+  `Editor/Codegen/Core/`, in the existing ungated Editor assembly, with no reference to the
+  connector. Includes a tolerant `.figma-manifest.json` reader. See
+  `Documentation~/FIGMA-VALIDATION.md`.
+- **`validate` verb in `Tools~/UxmlCodegenCli`**: `validate <importFolder> [--prefix p]
+  [--max-inline N] [--max-absolute N] [--no-token-colors] [--json]`, exit 0/1/2. Without
+  the verb the CLI is the drift check, unchanged. Good and bad fixtures shaped like
+  connector output in `Tools~/UxmlCodegenCli/Fixtures/figma/`; the CI `validate` job runs
+  both, and the bad one must fail with exact counts.
+- **Headless import helper** `Tools~/FigmaImport/figma-import.py` (Python stdlib only):
+  calls the connector's Pipeline commands `figma_import_url` / `figma_import_status`,
+  waits, prints the import result and can run the validator on the result folder.
+- EditMode tests for the validator core (`Tests/Editor/FigmaCore/`, 76 cases).
+
 ### Fixed
 
 - **CI: pinned `game-ci/unity-test-runner` to `v4.3.1`.** `Unity Tests`, `Compile samples`

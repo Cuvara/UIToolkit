@@ -1,0 +1,8 @@
+:root {
+    --surface-primary: rgba(18, 20, 28, 1);
+    --text-primary: rgba(240, 240, 245, 1);
+    --accent: rgba(255, 196, 0, 1);
+    --accent-pressed: var(--accent);
+    --spacing-md: 16px;
+    --radius-sm: 8px;
+}

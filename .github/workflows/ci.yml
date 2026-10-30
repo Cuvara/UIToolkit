@@ -95,6 +95,23 @@ jobs:
       - name: Declared samples resolve their elements
         run: python3 .github/scripts/check_samples.py
 
+      # The Figma import validator (Editor/FigmaCore/) is Unity-free and compiled into the
+      # UxmlCodegenCli `validate` verb, so it runs here without Unity or the connector.
+      # The good fixture must pass; the bad one must fail with its exact counts, which
+      # proves the gate can fail. See Documentation~/FIGMA-VALIDATION.md.
+      - name: Figma validator CLI on the fixtures
+        run: |
+          curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0 --install-dir "$HOME/.dotnet"
+          export PATH="$HOME/.dotnet:$PATH"
+          F="Tools~/UxmlCodegenCli/Fixtures/figma"
+          dotnet build "Tools~/UxmlCodegenCli/UxmlCodegenCli.csproj" -c Release -o /tmp/uxmlcli -nologo -v q
+          OPTS="--prefix rpg --max-inline 5 --max-absolute 1"
+          dotnet /tmp/uxmlcli/UxmlCodegenCli.dll validate "$F/good/Assets/Figma/Shop-Demo" $OPTS
+          code=0
+          dotnet /tmp/uxmlcli/UxmlCodegenCli.dll validate "$F/bad/Assets/Figma/Shop-Demo" $OPTS --json > /tmp/bad.json || code=$?
+          [ "$code" -eq 1 ] || { echo "::error::bad fixture must exit 1, got $code"; exit 1; }
+          python3 -c "import json; d = json.load(open('/tmp/bad.json')); assert (d['errors'], d['warnings']) == (7, 8), (d['errors'], d['warnings']); print('bad fixture:', d['errors'], 'errors,', d['warnings'], 'warnings')"
+
       - name: Check asmdef names
         run: |
           find . -name "*.asmdef" -not -path "./.github/*" | while read f; do

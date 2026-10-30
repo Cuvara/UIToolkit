@@ -1,0 +1,20 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="tokens.uss" />
+    <Style src="dark.uss" />
+    <Style src="ShopScreen.uss" />
+    <Style src="theme-override.uss" />
+    <Template name="ItemCard" src="ItemCard.uxml" />
+    <Template name="PriceTag" src="PriceTag.uxml" />
+    <ui:VisualElement style="flex-grow: 1; background-color: #12141C; padding-left: var(--spacing-md);">
+        <ui:Label text="Shop" style="color: rgba(240, 240, 245, 1); font-size: 32px;" />
+        <ui:VisualElement style="position: absolute; left: 24px; top: 80px; background-image: url(&quot;project://database/Assets/Figma/Shop-Demo/images/77d0e1.png?fileID=2800000&amp;guid=0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e&amp;type=3#77d0e1&quot;);">
+            <ui:Instance template="ItemCard" class="rpg-item-card" style="position: absolute; left: 0px; top: 0px;">
+                <AttributeOverrides element-name="text-0" text="Sword" />
+            </ui:Instance>
+            <ui:Instance template="ItemCard" class="rpg-item-card" style="position: absolute; left: 112px; top: 0px;">
+                <AttributeOverrides element-name="text-0" text="Shield" />
+            </ui:Instance>
+        </ui:VisualElement>
+        <ui:Button text="Buy" class="primary-button unity-button" style="margin-top: var(--spacing-lg);" />
+    </ui:VisualElement>
+</ui:UXML>

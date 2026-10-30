@@ -1,0 +1,13 @@
+.rpg-primary-button {
+    background-color: var(--accent);
+    color: var(--surface-primary);
+    border-top-left-radius: var(--radius-sm);
+    border-top-right-radius: var(--radius-sm);
+    border-bottom-left-radius: var(--radius-sm);
+    border-bottom-right-radius: var(--radius-sm);
+    height: 48px;
+}
+
+.rpg-primary-button:hover {
+    background-color: var(--accent-pressed);
+}
