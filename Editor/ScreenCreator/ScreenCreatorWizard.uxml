@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="True">
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
     <Style src="ScreenCreatorWizard.uss" />
     <ui:ScrollView>
         <ui:VisualElement class="section">
@@ -10,6 +10,12 @@
             <ui:TextField label="Output Path" name="output-path-field" value="Assets">
                 <ui:Button name="browse-button" text="..." class="browse-btn" />
             </ui:TextField>
+        </ui:VisualElement>
+        <ui:VisualElement class="section">
+            <ui:Label text="UXML" class="section-header" />
+            <ui:DropdownField label="Source" name="source-dropdown" />
+            <uie:ObjectField label="Existing UXML" name="existing-uxml-field" />
+            <ui:TextField label="Asset Key" name="asset-key-field" />
         </ui:VisualElement>
         <ui:Button text="Generate" name="generate-button" class="generate-btn" />
     </ui:ScrollView>
