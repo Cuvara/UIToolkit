@@ -7,6 +7,7 @@ namespace Cuvara.UIToolkit.Flow.Tests
     using Cuvara.UIToolkit.Core;
     using Cuvara.UIToolkit.Flow;
     using Cuvara.UIToolkit.Managers;
+    using Cuvara.UIToolkit.Theme;
     using Cuvara.UIToolkit.View;
     using Cysharp.Threading.Tasks;
     using NUnit.Framework;
@@ -549,10 +550,47 @@ namespace Cuvara.UIToolkit.Flow.Tests
 
             await this.nav.PushAsync<TapOutsideDimPresenter>();
 
+            // The dim colour is theme now (cuvara-scrim--dim reads --cuvara-color-scrim), so the
+            // assertion is that the class is set and the theme sheet reaches the scrim. These
+            // layers are detached, so there is no style pass to read a resolved colour from.
             var scrim = this.overlayLayer[0];
             Assert.That(scrim.name, Is.EqualTo("cuvara-scrim"));
-            Assert.That(scrim.resolvedStyle.backgroundColor.a, Is.GreaterThan(0f),
-                "DimsBelow scrim must be semi-transparent");
+            Assert.That(scrim.ClassListContains(CuvaraTheme.ScrimUssClassName), Is.True);
+            Assert.That(scrim.ClassListContains(CuvaraTheme.ScrimDimUssClassName), Is.True,
+                "DimsBelow scrim must carry the dim class");
+            Assert.That(CuvaraTheme.IsThemed(scrim), Is.True, "the theme sheet must reach the scrim");
+        });
+
+        [UnityTest]
+        public IEnumerator CloseOnTapOutside_WithoutDimsBelow_ScrimIsNotDimmed() => UniTask.ToCoroutine(async () =>
+        {
+            this.registry.Register(typeof(TapOutsideModalPresenter), typeof(TestScreenView), ModalKey,
+                ScreenOptions.Modal | ScreenOptions.CloseOnTapOutside);
+            this.scopes.Bind<TapOutsideModalPresenter>(() => new TapOutsideModalPresenter());
+
+            await this.nav.PushAsync<TapOutsideModalPresenter>();
+
+            var scrim = this.overlayLayer[0];
+            Assert.That(scrim.ClassListContains(CuvaraTheme.ScrimUssClassName), Is.True);
+            Assert.That(scrim.ClassListContains(CuvaraTheme.ScrimDimUssClassName), Is.False);
+            Assert.That(scrim.style.backgroundColor.keyword, Is.EqualTo(StyleKeyword.Null), "a transparent scrim has no colour");
+        });
+
+        [UnityTest]
+        public IEnumerator CloseOnTapOutside_WithDimsBelow_NoThemeSheet_FallsBackToInlineHalfBlack() => UniTask.ToCoroutine(async () =>
+        {
+            this.registry.Register(typeof(TapOutsideDimPresenter), typeof(TestScreenView), ModalKey,
+                ScreenOptions.Modal | ScreenOptions.CloseOnTapOutside | ScreenOptions.DimsBelow);
+            this.scopes.Bind<TapOutsideDimPresenter>(() => new TapOutsideDimPresenter());
+
+            using (CuvaraTheme.OverrideDefaultStyleSheet(null))
+            {
+                await this.nav.PushAsync<TapOutsideDimPresenter>();
+            }
+
+            var color = this.overlayLayer[0].style.backgroundColor.value;
+            Assert.That(color.a, Is.EqualTo(0.5f), "pre-theme inline value");
+            Assert.That(color.r + color.g + color.b, Is.Zero);
         });
 
         internal sealed class TapOutsideModalPresenter : TestScreenPresenter { }

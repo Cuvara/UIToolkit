@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Theme contract (`Runtime/Theme/`).** `CuvaraTheme.uss` declares semantic `--cuvara-*`
+  custom properties (colour roles, spacing, radius, font sizes) whose defaults equal the old
+  inline values, so rendering is unchanged. `ConfirmDialog`, `ToastService` and the
+  navigator's `DimsBelow` scrim now carry `cuvara-*` classes instead of inline colours and
+  spacing. The sheet reaches them with no host work, loaded from the package's `Resources`
+  folder; if it cannot be loaded, the old inline styles are applied.
+  `ICuvaraThemeService` / `CuvaraThemeService` attach the base theme, per-game override
+  sheets (for example a Figma token bridge) and a switchable mode sheet to a root,
+  idempotently. `RootUIDocument` applies one by default (`applyTheme`, `themeOverrides`,
+  `themeModeSheet`), exposes it as `Theme`, and `RegisterUIToolkit()` registers it as
+  `ICuvaraThemeService`. See `Documentation~/THEMING.md`.
+
 ### Fixed
 
 - **CI: pinned `game-ci/unity-test-runner` to `v4.3.1`.** `Unity Tests`, `Compile samples`
