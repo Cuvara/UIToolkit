@@ -21,11 +21,23 @@ namespace Cuvara.UIToolkit.FigmaCore
         public List<UssDeclaration> Declarations = new List<UssDeclaration>();
     }
 
+    /// <summary>One top-level <c>@import</c> statement: its target, unquoted, and its line.</summary>
+    public sealed class UssImport
+    {
+        public string Target;
+        public int Line;
+    }
+
     /// <summary>The result of <see cref="FigmaUss.Parse"/>. <see cref="Problem"/> is
-    /// non-null when the sheet is not well formed (unterminated rule or comment).</summary>
+    /// non-null when the sheet is not well formed (unterminated rule or comment, a stray
+    /// brace, text outside a rule).</summary>
     public sealed class UssSheet
     {
         public List<UssRule> Rules = new List<UssRule>();
+
+        /// <summary>Top-level <c>@import</c> statements, in order.</summary>
+        public List<UssImport> Imports = new List<UssImport>();
+
         public string Problem;
         public int ProblemLine;
     }
@@ -41,7 +53,11 @@ namespace Cuvara.UIToolkit.FigmaCore
         private static readonly Regex RgbColor = new Regex(@"(?<![\w-])rgba?\s*\([^)]*\)", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
         private static readonly Regex Identifier = new Regex(@"(?<![\w-])[a-zA-Z]+(?![\w(-])", RegexOptions.CultureInvariant);
         private static readonly Regex VarReference = new Regex(@"var\(\s*(--[A-Za-z0-9_-]+)\s*(,)?", RegexOptions.CultureInvariant);
-        private static readonly Regex UrlReference = new Regex(@"url\(\s*(?:""([^""]*)""|'([^']*)'|([^)""']*?))\s*\)", RegexOptions.CultureInvariant);
+        // Quoted and unquoted forms; a backslash escapes the next character in all three
+        // (url(a\(1\).png) names "a(1).png").
+        private static readonly Regex UrlReference = new Regex(@"url\(\s*(?:""((?:\\.|[^""\\])*)""|'((?:\\.|[^'\\])*)'|((?:\\.|[^)""'\\])*?))\s*\)", RegexOptions.CultureInvariant);
+        private static readonly Regex ImportTarget = new Regex(@"^@import\s+(?:url\(\s*(?:""((?:\\.|[^""\\])*)""|'((?:\\.|[^'\\])*)'|((?:\\.|[^)""'\\])*?))\s*\)|""((?:\\.|[^""\\])*)""|'((?:\\.|[^'\\])*)')", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+        private static readonly Regex CssEscape = new Regex(@"\\(?:([0-9a-fA-F]{1,6})\s?|(.))", RegexOptions.CultureInvariant | RegexOptions.Singleline);
         private static readonly Regex ClassSelector = new Regex(@"\.(-?[_a-zA-Z][_a-zA-Z0-9-]*)", RegexOptions.CultureInvariant);
 
         // CSS named colours (USS accepts the CSS set). 'transparent' and 'currentcolor' are
@@ -86,35 +102,65 @@ namespace Cuvara.UIToolkit.FigmaCore
             var position = 0;
             while (position < clean.Length)
             {
-                var open = clean.IndexOf('{', position);
+                position += LeadingWhitespace(clean, position);
+                if (position >= clean.Length) break;
+
+                // A top-level statement at-rule (@import, @charset) ends at ';' and has no block.
+                if (clean[position] == '@')
+                {
+                    var statementEnd = ScanTo(clean, position, clean.Length, "{;");
+                    if (statementEnd >= 0 && clean[statementEnd] == ';')
+                    {
+                        ReadImport(sheet, clean.Substring(position, statementEnd - position), lines.LineAt(position));
+                        position = statementEnd + 1;
+                        continue;
+                    }
+                }
+
+                var open = ScanTo(clean, position, clean.Length, "{");
                 if (open < 0)
                 {
-                    if (clean.Substring(position).Trim().Length > 0 && sheet.Problem == null)
-                    {
-                        sheet.Problem = "text outside any rule";
-                        sheet.ProblemLine = lines.LineAt(position + LeadingWhitespace(clean, position));
-                    }
-
+                    var stray = ScanTo(clean, position, clean.Length, "}");
+                    if (stray == position) SetProblem(sheet, "unexpected '}'", lines.LineAt(stray));
+                    else SetProblem(sheet, "text outside any rule", lines.LineAt(position));
                     break;
                 }
 
-                var close = FindBlockEnd(clean, open + 1);
-                var selectorStart = position + LeadingWhitespace(clean, position);
+                // A '}' before the selector closes nothing: report it, and read the selector after it.
+                var selectorStart = position;
+                for (var stray = ScanTo(clean, selectorStart, open, "}"); stray >= 0; stray = ScanTo(clean, selectorStart, open, "}"))
+                {
+                    SetProblem(sheet, "unexpected '}'", lines.LineAt(stray));
+                    selectorStart = stray + 1;
+                }
+
+                selectorStart += LeadingWhitespace(clean, selectorStart);
                 var rule = new UssRule
                 {
-                    Selector = clean.Substring(position, open - position).Trim(),
+                    Selector = clean.Substring(selectorStart, open - selectorStart).Trim(),
                     Line = lines.LineAt(Math.Min(selectorStart, open)),
                 };
                 sheet.Rules.Add(rule);
 
-                if (close < 0)
+                // USS has no nested blocks: a '{' before the closing '}' is a missing '}'.
+                var close = -1;
+                for (var scan = open + 1; ;)
                 {
-                    if (sheet.Problem == null)
+                    var hit = ScanTo(clean, scan, clean.Length, "{}");
+                    if (hit < 0) break;
+                    if (clean[hit] == '}')
                     {
-                        sheet.Problem = "unterminated rule '" + rule.Selector + "'";
-                        sheet.ProblemLine = rule.Line;
+                        close = hit;
+                        break;
                     }
 
+                    SetProblem(sheet, "unexpected '{' inside rule '" + rule.Selector + "'", lines.LineAt(hit));
+                    scan = hit + 1;
+                }
+
+                if (close < 0)
+                {
+                    SetProblem(sheet, "unterminated rule '" + rule.Selector + "'", rule.Line);
                     rule.Declarations.AddRange(ParseDeclarations(clean, open + 1, clean.Length, lines));
                     break;
                 }
@@ -124,6 +170,39 @@ namespace Cuvara.UIToolkit.FigmaCore
             }
 
             return sheet;
+        }
+
+        /// <summary><c>@import url(x)</c> / <c>@import "x"</c>; other statement at-rules are ignored.</summary>
+        private static void ReadImport(UssSheet sheet, string statement, int line)
+        {
+            var match = ImportTarget.Match(statement);
+            if (!match.Success) return;
+
+            for (var group = 1; group < match.Groups.Count; group++)
+            {
+                if (!match.Groups[group].Success) continue;
+                sheet.Imports.Add(new UssImport { Target = Unescape(match.Groups[group].Value).Trim(), Line = line });
+                return;
+            }
+        }
+
+        private static void SetProblem(UssSheet sheet, string problem, int line)
+        {
+            if (sheet.Problem != null) return;
+            sheet.Problem = problem;
+            sheet.ProblemLine = line;
+        }
+
+        /// <summary>Resolves CSS escapes: <c>\(</c> is <c>(</c>, <c>\26 </c> is <c>&amp;</c>.</summary>
+        private static string Unescape(string text)
+        {
+            if (text.IndexOf('\\') < 0) return text;
+            return CssEscape.Replace(text, match =>
+            {
+                if (!match.Groups[1].Success) return match.Groups[2].Value;
+                var code = int.Parse(match.Groups[1].Value, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture);
+                return code == 0 || code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF) ? "\uFFFD" : char.ConvertFromUtf32(code);
+            });
         }
 
         /// <summary>Parses an inline <c>style="..."</c> attribute value. Every declaration gets
@@ -194,7 +273,7 @@ namespace Cuvara.UIToolkit.FigmaCore
                 var target = match.Groups[1].Success ? match.Groups[1].Value
                     : match.Groups[2].Success ? match.Groups[2].Value
                     : match.Groups[3].Value;
-                found.Add(target.Trim());
+                found.Add(Unescape(target).Trim());
             }
 
             return found;
@@ -224,7 +303,11 @@ namespace Cuvara.UIToolkit.FigmaCore
                 {
                     var quote = chars[i];
                     var j = i + 1;
-                    while (j < chars.Length && chars[j] != quote) chars[j++] = ' ';
+                    while (j < chars.Length && value[j] != quote)
+                    {
+                        if (value[j] == '\\' && j + 1 < chars.Length) chars[j++] = ' ';
+                        chars[j++] = ' ';
+                    }
                     i = j;
                     continue;
                 }
@@ -263,9 +346,15 @@ namespace Cuvara.UIToolkit.FigmaCore
             {
                 var atEnd = i == end;
                 var c = atEnd ? ';' : text[i];
+                if (!atEnd && c == '\\' && i + 1 < end)
+                {
+                    i++; // an escaped character is never a quote, parenthesis or separator
+                    continue;
+                }
+
                 if (!atEnd && quote != '\0')
                 {
-                    if (c == quote) quote = '\0';
+                    if (c == quote || c == '\n') quote = '\0';
                     continue;
                 }
 
@@ -302,20 +391,32 @@ namespace Cuvara.UIToolkit.FigmaCore
             });
         }
 
-        private static int FindBlockEnd(string text, int start)
+        /// <summary>
+        /// The first index in [<paramref name="start"/>, <paramref name="end"/>) holding one of
+        /// <paramref name="stops"/> outside a quoted string, or -1. Escapes are skipped, and a
+        /// string ends at its closing quote or at a newline (USS strings cannot span lines
+        /// unescaped), the same rules <see cref="StripComments"/> follows.
+        /// </summary>
+        private static int ScanTo(string text, int start, int end, string stops)
         {
             var quote = '\0';
-            for (var i = start; i < text.Length; i++)
+            for (var i = start; i < end; i++)
             {
                 var c = text[i];
+                if (c == '\\')
+                {
+                    i++;
+                    continue;
+                }
+
                 if (quote != '\0')
                 {
-                    if (c == quote) quote = '\0';
+                    if (c == quote || c == '\n') quote = '\0';
                     continue;
                 }
 
                 if (c == '"' || c == '\'') quote = c;
-                else if (c == '}') return i;
+                else if (stops.IndexOf(c) >= 0) return i;
             }
 
             return -1;
