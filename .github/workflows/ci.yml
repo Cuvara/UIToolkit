@@ -112,6 +112,15 @@ jobs:
           [ "$code" -eq 1 ] || { echo "::error::bad fixture must exit 1, got $code"; exit 1; }
           python3 -c "import json; d = json.load(open('/tmp/bad.json')); assert (d['errors'], d['warnings']) == (7, 8), (d['errors'], d['warnings']); print('bad fixture:', d['errors'], 'errors,', d['warnings'], 'warnings')"
 
+      # The CLI's exit codes and --json shape, the headless import helper against a mock
+      # Pipeline server, and the lab-project creator. Plain Python; no Unity, no network.
+      - name: Figma tooling self-tests
+        run: |
+          export PATH="$HOME/.dotnet:$PATH"
+          python3 "Tools~/UxmlCodegenCli/cli_smoke.py" /tmp/uxmlcli/UxmlCodegenCli.dll
+          python3 "Tools~/FigmaImport/test_figma_import.py"
+          python3 "Tools~/FigmaLab/test_create_lab_project.py"
+
       - name: Check asmdef names
         run: |
           find . -name "*.asmdef" -not -path "./.github/*" | while read f; do
