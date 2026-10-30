@@ -13,15 +13,15 @@ the same change.
 
 | Assembly / tool | Folder | Unity mode | CI job(s) | Connector needed | Cases |
 |---|---|---|---|---|---|
-| `Cuvara.UIToolkit.Editor.Tests` | `Tests/Editor/` (+ `FigmaCore/`) | EditMode | `test`, `figma-connector` | no | 270 |
-| `Cuvara.UIToolkit.Editor.Figma.Tests` | `Tests/Editor/Figma/` | EditMode | `figma-connector` only | yes (gated) | 124 |
-| `Cuvara.UIToolkit.Tests` | `Tests/Runtime/` (root, `Collections/`, `TestSupport/`, `Theme/`, `ViewModel/`) | PlayMode | `test` | no | 207 |
+| `Cuvara.UIToolkit.Editor.Tests` | `Tests/Editor/` (+ `FigmaCore/`) | EditMode | `test`, `figma-connector` | no | 306 |
+| `Cuvara.UIToolkit.Editor.Figma.Tests` | `Tests/Editor/Figma/` | EditMode | `figma-connector` only | yes (gated) | 149 |
+| `Cuvara.UIToolkit.Tests` | `Tests/Runtime/` (root, `Collections/`, `TestSupport/`, `Theme/`, `ViewModel/`) | PlayMode | `test` | no | 218 |
 | `Cuvara.UIToolkit.Flow.Tests` | `Tests/Runtime/Flow/` | PlayMode | `test` | no | 109 |
 | `Cuvara.UIToolkit.Ecs.Tests` | `Tests/Runtime/Ecs/` | PlayMode | `test` (entities is in its manifest) | no (gated on `com.unity.entities`) | 20 |
 | `UxmlCodegenCli` drift check | `Tools~/UxmlCodegenCli/` | none (.NET 10) | client repo codegen-drift check | no | n/a |
 | `UxmlCodegenCli validate` on fixtures | `Tools~/UxmlCodegenCli/Fixtures/figma/` | none (.NET 10) | `validate` | no | 2 runs |
 | `cli_smoke.py` (CLI exit codes and JSON shape) | `Tools~/UxmlCodegenCli/cli_smoke.py` | none (.NET 10 + Python 3) | not wired yet (see section 6) | no | 30 |
-| Plain-C# NUnit harness (Unity-free sources) | `Editor/FigmaCore/`, `Editor/Codegen/Core/`, Unity-free `Editor/Figma/` and `Editor/ScreenCreator/` types | none (net8) | local only | no | 374 |
+| Plain-C# NUnit harness (Unity-free sources) | `Editor/FigmaCore/`, `Editor/Codegen/Core/`, Unity-free `Editor/Figma/` and `Editor/ScreenCreator/` types | none (net8) | local only | no | 426 |
 
 Notes:
 
@@ -62,7 +62,7 @@ runs in both setups:
 
 | Area | Suites | What is covered |
 |---|---|---|
-| Validator rules `FIG001`-`FIG051` | `FigmaImportValidatorTests`, `FigmaImportValidatorQaTests`, CLI fixtures | one test per rule; malformed UXML (unclosed tag, duplicate attribute, undefined entity, DOCTYPE, two roots, empty file, truncated tag); BOM and CRLF in UXML, USS and the manifest (same line numbers as LF); nested templates; missing or empty `src`; duplicate `<Style>`; every reference form (`project://database/Assets/...`, `/Assets/...`, relative, `../`, percent-encoded, `Packages/...`, other schemes, `data:`, `resource()`); thresholds at 0, at the limit and unlimited, per document; deterministic order and JSON |
+| Validator rules `FIG001`-`FIG051` | `FigmaImportValidatorTests`, `FigmaImportValidatorQaTests`, CLI fixtures | one test per rule; `var()` in an inline `style=` (`FIG023`: every form, screens and templates, not inside strings or `url()`, alongside `FIG022`); malformed UXML (unclosed tag, duplicate attribute, undefined entity, DOCTYPE, two roots, empty file, truncated tag); BOM and CRLF in UXML, USS and the manifest (same line numbers as LF); nested templates; missing or empty `src`; duplicate `<Style>`; every reference form (`project://database/Assets/...`, `/Assets/...`, relative, `../`, percent-encoded, `Packages/...`, other schemes, `data:`, `resource()`); thresholds at 0, at the limit and unlimited, per document; deterministic order and JSON |
 | USS reader | `FigmaUssTests`, `FigmaUssQaTests` | unterminated comment and rule; stray `}`; nested `{`; braces, semicolons and comment openers inside strings; escaped quotes; strings that end at a newline; `@import` (quoted and `url()`, line numbers, checked as `FIG040`); `url()` quoted, unquoted, with spaces, parentheses and CSS escapes; CRLF lines |
 | Tokens | `FigmaImportValidatorTests`, `FigmaImportValidatorQaTests` | aliases through `tokens.uss`; aliases to an undefined token; tokens defined only in a mode sheet or only in the manifest; `--unity-` and `--cuvara-` prefixes; exact, case-sensitive names; tokens in comments do not count |
 | Manifest and JSON | `FigmaManifestReaderTests`, `FigmaJsonTests`, `FigmaJsonQaTests`, `FigmaImportValidatorQaTests` | truncated, empty, binary and non-object manifests (`FIG002`, the rest of the folder is still checked); unknown fields; wrong types; empty screens; `generated[]` and `assetName` paths that leave the import folder (`../../x`, rooted); backslash paths; depth cap; escapes and numbers |
@@ -103,7 +103,7 @@ A release candidate is ready when every row is green on the release commit:
 | # | Check | Evidence |
 |---|---|---|
 | 1 | `validate` job: package.json, standalone, USS prefix, CHANGELOG version, `.meta` coverage, samples, asmdef names | CI job log |
-| 2 | `validate` job: good fixture exit 0 (0 errors, 0 warnings, 3 info), bad fixture exit 1 with exactly 7 errors and 8 warnings | CI job log |
+| 2 | `validate` job: good fixture exit 0 (0 errors, 0 warnings, 3 info), bad fixture exit 1 with exactly 10 errors and 8 warnings | CI job log |
 | 3 | `test` job: executed > 0, failed = 0, errors = 0 | `Assert tests ran and passed` line, test-results artifact |
 | 4 | `figma-connector` job: executed > 0, gated (`figma=`) > 0, failed = 0 | `::notice::` line |
 | 5 | `samples` job compiles | CI job log |

@@ -24,7 +24,7 @@ namespace Cuvara.UIToolkit.Editor.Tests.FigmaCore
         private const string CleanScreen = "<ui:UXML xmlns:ui=\"UnityEngine.UIElements\">\n"
             + "    <Style src=\"tokens.uss\" />\n"
             + "    <Style src=\"Screen.uss\" />\n"
-            + "    <ui:VisualElement style=\"flex-grow: 1; background-color: var(--surface);\">\n"
+            + "    <ui:VisualElement style=\"flex-grow: 1;\">\n"
             + "        <ui:Button text=\"Buy\" class=\"rpg-button unity-button\" />\n"
             + "    </ui:VisualElement>\n"
             + "</ui:UXML>\n";
@@ -424,7 +424,7 @@ namespace Cuvara.UIToolkit.Editor.Tests.FigmaCore
             WriteCleanImport();
             Write("modes/dark.uss", ":root {\n    --dark-only: #000;\n}\n");
             Write("Screen.uss", ".rpg-button { color: var(--dark-only); }\n");
-            Write("Screen.uxml", CleanScreen.Replace("var(--surface)", "var(--dark-only)"));
+            Write("Screen.uxml", CleanScreen.Replace("flex-grow: 1;", "flex-grow: 1; background-color: var(--dark-only);"));
 
             Assert.That(WithCode(Validate(), "FIG022"), Is.Empty);
         }
@@ -454,13 +454,90 @@ namespace Cuvara.UIToolkit.Editor.Tests.FigmaCore
         public void UndefinedToken_InInlineStyle_NamesTheElement()
         {
             WriteCleanImport();
-            Write("Screen.uxml", CleanScreen.Replace("var(--surface)", "var(--nope)"));
+            Write("Screen.uxml", CleanScreen.Replace("flex-grow: 1;", "flex-grow: 1; background-color: var(--nope);"));
 
             var diagnostic = WithCode(Validate(), "FIG022").Single();
 
             Assert.That(diagnostic.File, Is.EqualTo("Screen.uxml"));
             Assert.That(diagnostic.Line, Is.EqualTo(4));
             Assert.That(diagnostic.Message, Does.Contain("<VisualElement>"));
+        }
+
+        [TestCase("background-color: var(--surface)", "background-color", TestName = "DefinedToken")]
+        [TestCase("background-color: var(--surface, #000)", "background-color", TestName = "WithFallback")]
+        [TestCase("margin-top: var( --gap )", "margin-top", TestName = "Spaces")]
+        [TestCase("color: VAR(--text)", "color", TestName = "UpperCase")]
+        [TestCase("--local: var(--surface)", "--local", TestName = "CustomProperty")]
+        [TestCase("width: calc(var(--gap) * 2)", "width", TestName = "Nested")]
+        [TestCase("color: var(--cuvara-color-primary)", "color", TestName = "CuvaraToken")]
+        public void InlineStyleVariable_IsFig023Error_NamingTheProperty(string declaration, string property)
+        {
+            WriteCleanImport();
+            Write("Screen.uxml", CleanScreen.Replace("flex-grow: 1;", "flex-grow: 1; " + declaration + ";"));
+
+            var diagnostics = Validate();
+            var inline = WithCode(diagnostics, "FIG023");
+
+            Assert.That(inline.Count, Is.EqualTo(1), Dump(diagnostics));
+            Assert.That(inline[0].Severity, Is.EqualTo(FigmaDiagnosticSeverity.Error));
+            Assert.That(inline[0].File, Is.EqualTo("Screen.uxml"));
+            Assert.That(inline[0].Line, Is.EqualTo(4));
+            Assert.That(inline[0].Message, Does.Contain("'" + property + ":"));
+            Assert.That(inline[0].Message, Does.Contain("<VisualElement>"));
+            Assert.That(inline[0].Message, Does.Contain("CloneTree"));
+            Assert.That(inline[0].Message, Does.Contain("component"));
+        }
+
+        [Test]
+        public void InlineStyleVariable_IsReportedPerDeclaration_InScreensAndTemplates()
+        {
+            WriteCleanImport();
+            Write("Components/Card.uxml", "<ui:UXML xmlns:ui=\"UnityEngine.UIElements\">\n    <ui:Label text=\"x\" style=\"color: var(--text); margin-top: var(--gap); width: 4px;\" />\n</ui:UXML>\n");
+
+            var diagnostics = Validate();
+            var inline = WithCode(diagnostics, "FIG023");
+
+            Assert.That(inline.Count, Is.EqualTo(2), Dump(diagnostics));
+            Assert.That(inline.All(d => d.File == "Components/Card.uxml" && d.Line == 2), Is.True);
+            Assert.That(inline.Select(d => d.Message.Substring(0, d.Message.IndexOf(':'))),
+                Is.EqualTo(new[] { "inline style 'color", "inline style 'margin-top" }));
+        }
+
+        [Test]
+        public void InlineStyleVariable_UndefinedToken_IsBothFig022AndFig023()
+        {
+            WriteCleanImport();
+            Write("Screen.uxml", CleanScreen.Replace("flex-grow: 1;", "flex-grow: 1; color: var(--nope);"));
+
+            var diagnostics = Validate();
+
+            Assert.That(WithCode(diagnostics, "FIG022").Count, Is.EqualTo(1), Dump(diagnostics));
+            Assert.That(WithCode(diagnostics, "FIG023").Count, Is.EqualTo(1), Dump(diagnostics));
+        }
+
+        [TestCase("--label: 'var(--x)'", TestName = "InsideQuotes")]
+        [TestCase("background-image: url(\"images/var(1).png\")", TestName = "InsideUrl")]
+        [TestCase("-unity-font-definition: resource(\"Fonts/variable\")", TestName = "WordVariable")]
+        [TestCase("width: covar(1px)", TestName = "OtherFunctionEndingInVar")]
+        public void InlineStyle_WithoutAVarCall_IsNotFig023(string declaration)
+        {
+            WriteCleanImport();
+            Write("images/var(1).png", "png");
+            Write("Screen.uxml", CleanScreen.Replace("flex-grow: 1;", "flex-grow: 1; " + declaration + ";"));
+
+            var diagnostics = Validate();
+
+            Assert.That(WithCode(diagnostics, "FIG023"), Is.Empty, Dump(diagnostics));
+        }
+
+        [Test]
+        public void VarInClassRules_IsNotFig023()
+        {
+            WriteCleanImport();
+
+            var diagnostics = Validate();
+
+            Assert.That(WithCode(diagnostics, "FIG023"), Is.Empty, "Screen.uss and tokens.uss use var(); only inline styles are affected");
         }
 
         [Test]
@@ -608,7 +685,7 @@ namespace Cuvara.UIToolkit.Editor.Tests.FigmaCore
             WriteCleanImport();
             Write("b/Z.uss", ".z { color: red; }\n.y { color: #fff; }\n");
             Write("a/A.uss", ".a { width: var(--missing); }\n");
-            Write("Screen.uxml", CleanScreen.Replace("var(--surface)", "red"));
+            Write("Screen.uxml", CleanScreen.Replace("flex-grow: 1;", "flex-grow: 1; background-color: red;"));
 
             var first = Validate();
             var second = Validate();

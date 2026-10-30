@@ -19,7 +19,7 @@ namespace Cuvara.UIToolkit.Editor.Tests.FigmaCore
         private const string CleanScreen = @"<ui:UXML xmlns:ui=""UnityEngine.UIElements"">
     <Style src=""tokens.uss"" />
     <Style src=""Screen.uss"" />
-    <ui:VisualElement style=""flex-grow: 1; background-color: var(--surface);"">
+    <ui:VisualElement style=""flex-grow: 1;"">
         <ui:Button text=""Buy"" class=""rpg-button unity-button"" />
     </ui:VisualElement>
 </ui:UXML>
@@ -198,7 +198,7 @@ namespace Cuvara.UIToolkit.Editor.Tests.FigmaCore
         {
             WriteCleanImport();
             Write("Screen.uss", ".rpg-button {\n    color: white;\n    background-color: #ff0000;\n    border-left-color: var(--text, #000);\n}\n");
-            Write("Screen.uxml", CleanScreen.Replace("background-color: var(--surface);", "background-color: rgba(1, 2, 3, 1);"));
+            Write("Screen.uxml", CleanScreen.Replace("flex-grow: 1;", "flex-grow: 1; background-color: rgba(1, 2, 3, 1);"));
 
             var diagnostics = Validate();
             var literals = WithCode(diagnostics, "FIG020");

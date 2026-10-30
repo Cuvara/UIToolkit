@@ -87,9 +87,9 @@ def main():
 
     # validate verb
     case("validate good fixture", cli, ["validate", GOOD] + OPTS, 0, stdout_has=["0 error(s), 0 warning(s), 3 info"])
-    case("validate bad fixture", cli, ["validate", BAD] + OPTS, 1, stdout_has=["7 error(s), 8 warning(s), 3 info"])
+    case("validate bad fixture", cli, ["validate", BAD] + OPTS, 1, stdout_has=["10 error(s), 8 warning(s), 3 info"])
     case("validate good --json shape", cli, ["validate", GOOD] + OPTS + ["--json"], 0, check=json_shape(0, 0))
-    case("validate bad --json shape", cli, ["validate", BAD] + OPTS + ["--json"], 1, check=json_shape(7, 8))
+    case("validate bad --json shape", cli, ["validate", BAD] + OPTS + ["--json"], 1, check=json_shape(10, 8))
     case("validate --json is deterministic", cli, ["validate", BAD] + OPTS + ["--json"], 1,
          check=lambda out: _assert(out == run(cli, ["validate", BAD] + OPTS + ["--json"])[1], "two runs differ"))
     case("validate options before folder", cli, ["validate"] + OPTS + [GOOD], 0)

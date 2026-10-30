@@ -33,6 +33,7 @@ namespace Cuvara.UIToolkit.FigmaCore
         public const string LiteralColor = "FIG020";
         public const string LiteralColorSummary = "FIG021";
         public const string UndefinedToken = "FIG022";
+        public const string InlineStyleVariable = "FIG023";
         public const string InlineStyleBudget = "FIG030";
         public const string LayoutSummary = "FIG031";
         public const string AbsoluteBudget = "FIG032";
@@ -262,6 +263,15 @@ namespace Cuvara.UIToolkit.FigmaCore
                                     foreach (var declaration in FigmaUss.ParseInline(value, line))
                                     {
                                         if (FigmaUss.IsAbsolutePosition(declaration)) isAbsolute = true;
+                                        if (FigmaUss.UsesVariable(declaration.Value))
+                                        {
+                                            // Unity 6000.3: VisualTreeAsset.CloneTree/Instantiate throws a
+                                            // NullReferenceException in StyleVariableResolver for var() in an
+                                            // inline style, attached or not. USS variables are class-rule only.
+                                            Add(InlineStyleVariable, FigmaDiagnosticSeverity.Error, file, line,
+                                                $"inline style '{declaration.Property}: {declaration.Value}' on <{tag}> uses var(); UI Toolkit cannot clone this UXML (NullReferenceException in CloneTree). Bind the layer through a Figma component so the value lands in a class rule, or unbind the variable");
+                                        }
+
                                         CheckDeclaration(file, directory, declaration,
                                             !declaration.Property.StartsWith("--", StringComparison.Ordinal), tag);
                                     }

@@ -1,4 +1,15 @@
+.rpg-shop-screen {
+    background-color: var(--surface-primary);
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+}
+
+.rpg-shop-title {
+    color: var(--text-primary);
+}
+
 .rpg-primary-button {
+    margin-top: var(--spacing-md);
     background-color: var(--accent);
     color: var(--surface-primary);
     border-top-left-radius: var(--radius-sm);
