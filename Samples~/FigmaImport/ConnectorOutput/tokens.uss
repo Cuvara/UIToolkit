@@ -1,0 +1,17 @@
+:root {
+    --brand-primary: rgba(232, 93, 4, 1);
+    --brand-on-primary: rgba(255, 255, 255, 1);
+    --surface-card: rgba(250, 247, 242, 1);
+    --surface-raised: rgba(255, 255, 255, 0.96);
+    --surface-art: rgba(254, 215, 170, 1);
+    --text-primary: rgba(28, 25, 23, 1);
+    --text-secondary: rgba(87, 83, 78, 1);
+    --overlay-scrim: rgba(28, 25, 23, 0.6);
+    --status-success: rgba(22, 163, 74, 0.95);
+    --status-error: rgba(220, 38, 38, 0.95);
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+}

@@ -48,6 +48,11 @@
       "displayName": "Loading Flow",
       "description": "Two-scene flow: LoadingScene (MonoBehaviour-driven progress bar, tips, spinner) transitions to MainScene (ScreenNavigator with every feature). Demonstrates: Push, Pop, Replace, PopToRoot, Modal+DimsBelow overlay, model parameters, OnActivate/OnDeactivate/OnSuspend/OnResume lifecycle hooks, OnBackRequested override, BackNavigationSource, UIToolkitListAdapter collection, and per-scene navigator scoping. Import, add both scenes to Build Settings, open LoadingScene, press Play.",
       "path": "Samples~/LoadingFlow"
+    },
+    {
+      "displayName": "Figma Import",
+      "description": "How a game adopts Unity's UI Toolkit Connector for Figma (com.unity.ui.figma) with this package. A stand-in for one connector import (ShopCard screen, PriceTag component, tokens, light and dark mode sheets, image, manifest) drives a Model/View/Presenter screen created from the existing UXML; the Cuvara theme reads the Figma tokens through a generated bridge sheet; a toggle switches light and dark for the screen and for the built-in dialog and toasts. Includes an example FigmaProfile and an adoption guide. Runs without the connector installed. Import, open FigmaImportSample.unity, press Play.",
+      "path": "Samples~/FigmaImport"
     }
   ],
   "testables": [
