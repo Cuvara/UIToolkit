@@ -24,6 +24,16 @@ namespace Cuvara.UIToolkit.Editor.Figma.Tests
         }
 
         [Test]
+        public void Normalize_ResolvesDotSegments_SoAssetsCannotBeEscaped()
+        {
+            Assert.That(FigmaPaths.Normalize("Assets/UI/../Theme/./Bridge/"), Is.EqualTo("Assets/Theme/Bridge"));
+            Assert.That(FigmaPaths.IsUnderAssets("Assets/../Packages"), Is.False);
+            Assert.That(FigmaPaths.IsUnderAssets("Assets/x/../../ProjectSettings"), Is.False);
+            Assert.That(FigmaPaths.IsSameOrInside("Assets/Game/../Figma/Shop/Bridge", "Assets/Figma/Shop"), Is.True);
+            Assert.That(FigmaPaths.ValidateBridgeFolder("Assets/../Packages", null, "p").Count, Is.GreaterThan(0));
+        }
+
+        [Test]
         public void Normalize_Works()
         {
             Assert.That(FigmaPaths.Normalize(" ./Assets//UI\\Theme/ "), Is.EqualTo("Assets/UI/Theme"));

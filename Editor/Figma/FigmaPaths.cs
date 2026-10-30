@@ -35,8 +35,24 @@ namespace Cuvara.UIToolkit.Editor.Figma
 
             var normalized = path.Trim().Replace('\\', '/');
             while (normalized.Contains("//")) normalized = normalized.Replace("//", "/");
-            if (normalized.StartsWith("./", StringComparison.Ordinal)) normalized = normalized.Substring(2);
-            return normalized.TrimEnd('/');
+
+            // Resolve "." and ".." so containment checks cannot be escaped with
+            // "Assets/../Packages". A ".." that climbs above the start is kept, so the
+            // result is never "under Assets".
+            var segments = new List<string>();
+            foreach (var segment in normalized.Split('/'))
+            {
+                if (segment.Length == 0 || segment == ".") continue;
+                if (segment == ".." && segments.Count > 0 && segments[segments.Count - 1] != "..")
+                {
+                    segments.RemoveAt(segments.Count - 1);
+                    continue;
+                }
+
+                segments.Add(segment);
+            }
+
+            return string.Join("/", segments);
         }
 
         /// <summary>True when <paramref name="path"/> is <paramref name="folder"/> or lies under it.</summary>

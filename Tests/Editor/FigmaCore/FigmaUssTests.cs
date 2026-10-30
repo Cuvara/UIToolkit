@@ -8,6 +8,16 @@ namespace Cuvara.UIToolkit.Editor.Tests.FigmaCore
     public class FigmaUssTests
     {
         [Test]
+        public void Parse_CommentOpenerInsideQuotes_IsNotAComment()
+        {
+            var sheet = FigmaUss.Parse(".a { background-image: url(\"x/*y.png\"); color: red; }\n.b { width: 1px; }\n");
+
+            Assert.That(sheet.Problem, Is.Null);
+            Assert.That(sheet.Rules.Select(r => r.Selector), Is.EqualTo(new[] { ".a", ".b" }));
+            Assert.That(sheet.Rules[0].Declarations.Select(d => d.Property), Is.EqualTo(new[] { "background-image", "color" }));
+        }
+
+        [Test]
         public void Parse_RulesDeclarationsAndLines()
         {
             var sheet = FigmaUss.Parse(".a {\n    color: red;\n    width: 10px;\n}\n\n.b:hover > .c {\n    height: 2px;\n}\n");

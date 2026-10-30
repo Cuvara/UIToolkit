@@ -327,9 +327,28 @@ namespace Cuvara.UIToolkit.FigmaCore
             unterminatedAt = -1;
             var builder = new StringBuilder(text);
             var i = 0;
+            var quote = '\0';
             while (i < text.Length - 1)
             {
-                if (text[i] == '/' && text[i + 1] == '*')
+                var c = text[i];
+                if (quote != '\0')
+                {
+                    // Inside a quoted string: skip escapes, stop at the closing quote or a newline
+                    // (USS strings cannot span lines unescaped).
+                    if (c == '\\') { i += 2; continue; }
+                    if (c == quote || c == '\n') quote = '\0';
+                    i++;
+                    continue;
+                }
+
+                if (c == '"' || c == '\'')
+                {
+                    quote = c;
+                    i++;
+                    continue;
+                }
+
+                if (c == '/' && text[i + 1] == '*')
                 {
                     var end = text.IndexOf("*/", i + 2, StringComparison.Ordinal);
                     var stop = end < 0 ? text.Length : end + 2;
