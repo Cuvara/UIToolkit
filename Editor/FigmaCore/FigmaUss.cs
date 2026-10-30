@@ -58,6 +58,7 @@ namespace Cuvara.UIToolkit.FigmaCore
         private static readonly Regex UrlReference = new Regex(@"url\(\s*(?:""((?:\\.|[^""\\])*)""|'((?:\\.|[^'\\])*)'|((?:\\.|[^)""'\\])*?))\s*\)", RegexOptions.CultureInvariant);
         private static readonly Regex ImportTarget = new Regex(@"^@import\s+(?:url\(\s*(?:""((?:\\.|[^""\\])*)""|'((?:\\.|[^'\\])*)'|((?:\\.|[^)""'\\])*?))\s*\)|""((?:\\.|[^""\\])*)""|'((?:\\.|[^'\\])*)')", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
         private static readonly Regex CssEscape = new Regex(@"\\(?:([0-9a-fA-F]{1,6})\s?|(.))", RegexOptions.CultureInvariant | RegexOptions.Singleline);
+        private static readonly Regex VarCall = new Regex(@"(?<![\w-])var\s*\(", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
         private static readonly Regex ClassSelector = new Regex(@"\.(-?[_a-zA-Z][_a-zA-Z0-9-]*)", RegexOptions.CultureInvariant);
 
         // CSS named colours (USS accepts the CSS set). 'transparent' and 'currentcolor' are
@@ -277,6 +278,13 @@ namespace Cuvara.UIToolkit.FigmaCore
             }
 
             return found;
+        }
+
+        /// <summary>True when <paramref name="value"/> calls <c>var()</c> outside a quoted string
+        /// or a <c>url()</c>, with or without a fallback.</summary>
+        public static bool UsesVariable(string value)
+        {
+            return !string.IsNullOrEmpty(value) && VarCall.IsMatch(Scrub(value));
         }
 
         /// <summary>True for <c>position: absolute</c>.</summary>

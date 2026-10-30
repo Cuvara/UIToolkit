@@ -110,7 +110,7 @@ jobs:
           code=0
           dotnet /tmp/uxmlcli/UxmlCodegenCli.dll validate "$F/bad/Assets/Figma/Shop-Demo" $OPTS --json > /tmp/bad.json || code=$?
           [ "$code" -eq 1 ] || { echo "::error::bad fixture must exit 1, got $code"; exit 1; }
-          python3 -c "import json; d = json.load(open('/tmp/bad.json')); assert (d['errors'], d['warnings']) == (7, 8), (d['errors'], d['warnings']); print('bad fixture:', d['errors'], 'errors,', d['warnings'], 'warnings')"
+          python3 -c "import json; d = json.load(open('/tmp/bad.json')); assert (d['errors'], d['warnings']) == (10, 8), (d['errors'], d['warnings']); print('bad fixture:', d['errors'], 'errors,', d['warnings'], 'warnings')"
 
       # The CLI's exit codes and --json shape, the headless import helper against a mock
       # Pipeline server, and the lab-project creator. Plain Python; no Unity, no network.

@@ -3,8 +3,8 @@
     <Style src="dark.uss" />
     <Style src="ShopScreen.uss" />
     <Template name="ItemCard" src="ItemCard.uxml" />
-    <ui:VisualElement style="flex-grow: 1; flex-direction: column; background-color: var(--surface-primary); padding-left: var(--spacing-md); padding-right: var(--spacing-md);">
-        <ui:Label text="Shop" style="color: var(--text-primary); font-size: 32px; -unity-font-style: bold;" />
+    <ui:VisualElement class="rpg-shop-screen" style="flex-grow: 1; flex-direction: column;">
+        <ui:Label text="Shop" class="rpg-shop-title" style="font-size: 32px; -unity-font-style: bold;" />
         <ui:VisualElement style="flex-direction: row; height: 120px; background-image: url(&quot;project://database/Assets/Figma/Shop-Demo/images/3f2a9c.png?fileID=2800000&amp;guid=6a1f0c2e9b8d4e7f8a3b2c1d0e9f8a7b&amp;type=3#3f2a9c&quot;);">
             <ui:Instance template="ItemCard" class="rpg-item-card">
                 <AttributeOverrides element-name="text-0" text="Sword" />
@@ -13,6 +13,6 @@
                 <AttributeOverrides element-name="text-0" text="Shield" />
             </ui:Instance>
         </ui:VisualElement>
-        <ui:Button text="Buy" class="rpg-primary-button unity-button" style="margin-top: var(--spacing-md);" />
+        <ui:Button text="Buy" class="rpg-primary-button unity-button" />
     </ui:VisualElement>
 </ui:UXML>

@@ -86,6 +86,21 @@ namespace Cuvara.UIToolkit.Editor.Tests.FigmaCore
             Assert.That(FigmaUss.FindUrls(value), Is.EqualTo(new[] { expected }));
         }
 
+        [TestCase("var(--x)", true)]
+        [TestCase("1px var(--x, 2px)", true)]
+        [TestCase("Var (--x)", true)]
+        [TestCase("calc(var(--x) * 2)", true)]
+        [TestCase("\"var(--x)\"", false)]
+        [TestCase("url(\"var(--x).png\")", false)]
+        [TestCase("covar(--x)", false)]
+        [TestCase("variable", false)]
+        [TestCase("", false)]
+        [TestCase(null, false)]
+        public void UsesVariable_FindsVarCallsOutsideStringsAndUrls(string value, bool expected)
+        {
+            Assert.That(FigmaUss.UsesVariable(value), Is.EqualTo(expected));
+        }
+
         [Test]
         public void FindUrls_SeveralInOneValue()
         {

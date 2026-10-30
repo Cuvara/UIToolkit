@@ -2,6 +2,6 @@
     <Style src="tokens.uss" />
     <Style src="ItemCard.uss" />
     <ui:VisualElement class="rpg-item-card">
-        <ui:Label name="text-0" text="Item" style="color: var(--text-primary);" />
+        <ui:Label name="text-0" text="Item" class="rpg-item-card__label" />
     </ui:VisualElement>
 </ui:UXML>

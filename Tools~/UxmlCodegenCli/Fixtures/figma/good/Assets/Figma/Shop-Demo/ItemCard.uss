@@ -5,3 +5,7 @@
     background-color: var(--surface-primary);
     border-top-left-radius: var(--radius-sm);
 }
+
+.rpg-item-card__label {
+    color: var(--text-primary);
+}
