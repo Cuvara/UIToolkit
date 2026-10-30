@@ -25,6 +25,18 @@ namespace Cuvara.UIToolkit.Codegen.Cli
 
         private static int Main(string[] args)
         {
+            // Verbs are opt-in: anything that is not a known verb is a drift-check root, exactly
+            // as before verbs existed.
+            if (args.Length > 0 && args[0] == FigmaValidateCommand.Verb)
+            {
+                return FigmaValidateCommand.Run(args.Skip(1).ToArray());
+            }
+
+            return RunDriftCheck(args);
+        }
+
+        private static int RunDriftCheck(string[] args)
+        {
             var roots = args.Length > 0 ? args : new[] { "." };
             var checkedCount = 0;
             var drifted = new List<string>();

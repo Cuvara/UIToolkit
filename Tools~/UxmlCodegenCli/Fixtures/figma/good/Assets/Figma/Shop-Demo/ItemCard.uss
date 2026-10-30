@@ -1,0 +1,11 @@
+.rpg-item-card {
+    width: 96px;
+    height: 96px;
+    margin-right: var(--spacing-md);
+    background-color: var(--surface-primary);
+    border-top-left-radius: var(--radius-sm);
+}
+
+.rpg-item-card__label {
+    color: var(--text-primary);
+}

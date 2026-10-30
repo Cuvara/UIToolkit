@@ -125,10 +125,15 @@ dotnet run --project Packages/com.cuvara.uitoolkit/Tools~/UxmlCodegenCli/UxmlCod
   -- Packages/com.cuvara.uitoolkit Assets
 ```
 
-Exit 0 when everything matches; exit 1 listing every drifted file. The repository workflow
-`.github/workflows/uxml-codegen-drift.yml` runs it on PRs touching UXML, generated
-bindings, or the codegen itself. Someone who edits a UXML outside the Editor (or resolves
-a merge by hand) and forgets to regenerate is caught here, not at runtime.
+Exit 0 when everything matches; exit 1 listing every drifted or broken file; exit 2 when a
+root does not exist. Run it in the CI of every repository that commits enrolled UXML, on
+changes to UXML, generated bindings or the codegen. Someone who edits a UXML outside the
+Editor (or resolves a merge by hand) and forgets to regenerate is caught there, not at
+runtime.
+
+This package's own `.github/workflows/ci.yml` does **not** run the drift check yet: its
+`validate` job builds the same CLI only for the Figma `validate` verb. Run the command above
+locally before you commit a UXML change here.
 
 ## Rules and conventions
 
@@ -191,7 +196,7 @@ Consequences:
   import lines and for `Scripts have compiler errors.` — the exit code alone proves
   nothing.
 - Keep committed `.uxml.g.cs` files in sync with the code that consumes them (the drift
-  workflow enforces the UXML side of this), so batchmode never starts dirty.
+  check enforces the UXML side of this), so batchmode never starts dirty.
 
 ## Layout
 
@@ -200,10 +205,11 @@ Consequences:
 | `Require<T>` | `Runtime/Utilities/VisualElementQueryExtensions.cs` (`Cuvara.UIToolkit`) |
 | Pure core (no Unity) | `Editor/Codegen/Core/` (`Cuvara.UIToolkit.Editor`, namespace `Cuvara.UIToolkit.Codegen`) |
 | Menu + postprocessor | `Editor/Codegen/` |
-| Drift CLI | `Tools~/UxmlCodegenCli/` — compiles `Editor/Codegen/Core/` with plain `dotnet` |
+| Drift CLI | `Tools~/UxmlCodegenCli/` — compiles `Editor/Codegen/Core/` with plain `dotnet`; the same CLI's `validate` verb checks Figma import folders (`FIGMA-VALIDATION.md`) |
 | Generator tests (string fixtures, also run under plain `dotnet`) | `Tests/Editor/UxmlBindingGeneratorTests.cs` |
 | `Require` + generated-class tests | `Tests/Runtime/RequireQueryTests.cs`, `Tests/Runtime/GeneratedConfirmPopupTests.cs` |
-| Enrolled examples, checked by CI | `Tests/Runtime/ConfirmPopup.uxml` + `Tests/Runtime/Generated/ConfirmPopup.uxml.g.cs`; `Samples~/EcsHud/VitalsView.uxml` + its `Generated/VitalsView.uxml.g.cs` (the partial-view half of the hybrid data-binding sample — see `HYBRID-DATA-BINDING.md`) |
+| Enrolled examples (run the drift check over the package root) | `Tests/Runtime/ConfirmPopup.uxml` + `Tests/Runtime/Generated/ConfirmPopup.uxml.g.cs`; `Samples~/EcsHud/VitalsView.uxml` + its `Generated/VitalsView.uxml.g.cs` (the partial-view half of the hybrid data-binding sample — see `HYBRID-DATA-BINDING.md`) |
 
 The core stays Unity-free so the CLI can compile it — a `UnityEngine` using anywhere under
-`Editor/Codegen/Core/` breaks the drift workflow's build, which is the enforcement.
+`Editor/Codegen/Core/` breaks the CLI build, which is the enforcement. The package CI builds
+the CLI in its `validate` job (for the Figma `validate` verb), so such a using fails CI.

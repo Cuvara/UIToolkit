@@ -1,0 +1,21 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- SAMPLE STAND-IN: hand-made to mirror UI Toolkit Connector for Figma 0.3.0-exp.1 output. In a game the connector writes this folder to Assets/Figma/<file>/ and rewrites every file on each push; the real file carries no comment. See ConnectorOutput/README.md. -->
+    <Style src="tokens.uss" />
+    <Style src="light.uss" />
+    <Style src="ShopCard.uss" />
+    <Template name="PriceTag" src="PriceTag.uxml" />
+    <ui:VisualElement style="flex-grow: 1; align-items: center; justify-content: center;">
+        <ui:VisualElement class="shop-card" style="width: 360px;">
+            <ui:VisualElement class="shop-card-art" style="height: 160px; background-image: url(&quot;images/5e1a7c.png&quot;); -unity-background-scale-mode: scale-to-fit;" />
+            <ui:Label text="Ember Blade" class="shop-card-title" />
+            <ui:Label text="A sword that never cools. +12 attack." class="shop-card-description" style="white-space: normal;" />
+            <ui:VisualElement style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: 24px;">
+                <ui:Instance template="PriceTag" class="shop-price-tag">
+                    <AttributeOverrides element-name="text-0" text="250" />
+                    <AttributeOverrides element-name="text-1" text="gold" />
+                </ui:Instance>
+                <ui:Button text="Buy" class="shop-primary-button unity-button" style="width: 140px;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,9 @@
+:root {
+    --status-success: rgba(22, 163, 74, 0.95);
+    --status-error: rgba(220, 38, 38, 0.95);
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+}

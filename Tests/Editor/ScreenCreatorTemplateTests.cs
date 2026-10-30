@@ -246,6 +246,112 @@ namespace Cuvara.UIToolkit.Editor.Tests
 
         #endregion
 
+        #region Existing UXML source
+
+        private static string RenderExisting(ScreenType type, bool hasModel, string key = "ShopKey")
+        {
+            return ScreenCreatorTemplates.Substitute(
+                ScreenCreatorTemplates.SelectScriptTemplate(type, hasModel, ScreenSource.ExistingUxml),
+                "Game.Feature", "Shop", key, "Assets/Figma/Game/Shop.uxml");
+        }
+
+        [Test]
+        public void NewUxmlSource_SelectsExactlyTheOriginalTemplates()
+        {
+            foreach (var type in AllTypes)
+            foreach (var hasModel in new[] { true, false })
+            {
+                Assert.That(ScreenCreatorTemplates.SelectScriptTemplate(type, hasModel, ScreenSource.NewUxml),
+                    Is.SameAs(ScreenCreatorTemplates.SelectScriptTemplate(type, hasModel)), $"{type}/hasModel={hasModel}");
+            }
+        }
+
+        [Test]
+        public void ExistingUxml_EveryPlaceholder_IsSubstituted()
+        {
+            foreach (var type in AllTypes)
+            foreach (var hasModel in new[] { true, false })
+                Assert.That(RenderExisting(type, hasModel), Does.Not.Contain("X_"), $"{type}/hasModel={hasModel}");
+        }
+
+        [Test]
+        public void ExistingUxml_View_DeclaresTheChosenAssetKey_AndNamesTheSource()
+        {
+            foreach (var type in AllTypes)
+            {
+                var rendered = RenderExisting(type, true);
+                Assert.That(rendered, Does.Contain("public const string AssetKey = \"ShopKey\";"), $"{type}");
+                Assert.That(rendered, Does.Contain("Assets/Figma/Game/Shop.uxml"), $"{type}");
+            }
+        }
+
+        [Test]
+        public void ExistingUxml_View_QueriesNoElement()
+        {
+            // A Figma import emits no element names, so a generated Require<Label>("title") would
+            // throw on the first frame. The view must not assume any name.
+            foreach (var type in AllTypes)
+            foreach (var hasModel in new[] { true, false })
+            {
+                var rendered = RenderExisting(type, hasModel);
+                Assert.That(rendered, Does.Not.Contain("Require<Label>"), $"{type}/hasModel={hasModel}");
+                Assert.That(rendered, Does.Not.Contain("Require<Button>"), $"{type}/hasModel={hasModel}");
+                Assert.That(rendered, Does.Not.Contain(".Q<"), $"{type}/hasModel={hasModel}");
+                Assert.That(rendered, Does.Not.Contain("btn-close"), $"{type}/hasModel={hasModel}");
+            }
+        }
+
+        [Test]
+        public void ExistingUxml_KeepsTheBaseClassesAndTheBindSignature()
+        {
+            Assert.That(RenderExisting(ScreenType.Screen, true), Does.Contain(": BaseUIToolkitScreenPresenter<IShopView, ShopModel>"));
+            Assert.That(RenderExisting(ScreenType.Screen, false), Does.Contain(": BaseUIToolkitScreenPresenter<IShopView>"));
+            Assert.That(RenderExisting(ScreenType.Popup, true), Does.Contain(": BaseUIToolkitPopupPresenter<IShopView, ShopModel>"));
+            Assert.That(RenderExisting(ScreenType.Popup, false), Does.Contain(": BaseUIToolkitPopupPresenter<IShopView>"));
+            Assert.That(RenderExisting(ScreenType.Item, true), Does.Contain(": BaseUIToolkitItemPresenter<ShopView, ShopModel>"));
+
+            foreach (var type in new[] { ScreenType.Screen, ScreenType.Popup })
+            {
+                var rendered = RenderExisting(type, true);
+                Assert.That(rendered, Does.Contain("ShopView(VisualTreeAsset asset) : base(asset)"), $"{type}");
+                Assert.That(rendered, Does.Contain("ScreenSubscriptions subs"), $"{type}");
+                Assert.That(rendered, Does.Contain("CancellationToken ct"), $"{type}");
+                Assert.That(RenderExisting(type, false), Does.Not.Contain("ShopModel"), $"{type}");
+            }
+        }
+
+        [Test]
+        public void ExistingUxml_ContainsNoBannedToken()
+        {
+            foreach (var type in AllTypes)
+            foreach (var hasModel in new[] { true, false })
+            foreach (var token in BannedTokens)
+                Assert.That(RenderExisting(type, hasModel), Does.Not.Contain(token), $"{type}/hasModel={hasModel}");
+        }
+
+        [Test]
+        public void ExistingUxml_EscapesTheKeyIntoAValidStringLiteral()
+        {
+            var rendered = RenderExisting(ScreenType.Screen, true, "ui/\"odd\"\\key");
+            Assert.That(rendered, Does.Contain("AssetKey = \"ui/\\\"odd\\\"\\\\key\";"));
+            Assert.Throws<ArgumentException>(() => RenderExisting(ScreenType.Screen, true, "two\nlines"));
+        }
+
+        [Test]
+        public void UnknownScreenSource_Throws()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => ScreenCreatorTemplates.SelectScriptTemplate(ScreenType.Screen, true, (ScreenSource)99));
+        }
+
+        [Test]
+        public void DefaultAssetKey_IsTheFileNameWithoutExtension()
+        {
+            Assert.That(ScreenCreatorTemplates.DefaultAssetKey("Assets/Figma/Game/Main-Menu.uxml"), Is.EqualTo("Main-Menu"));
+            Assert.That(ScreenCreatorTemplates.DefaultAssetKey(null), Is.Empty);
+        }
+
+        #endregion
+
         #region Test template
 
         [Test]

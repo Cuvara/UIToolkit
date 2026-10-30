@@ -1,0 +1,73 @@
+{
+    "fileName": "Cuvara Shop",
+    "tokens": [
+        { "name": "--brand-primary", "id": "VariableID:1:2", "type": "COLOR", "value": "rgba(232, 93, 4, 1)", "unit": "" },
+        { "name": "--brand-on-primary", "id": "VariableID:1:3", "type": "COLOR", "value": "rgba(255, 255, 255, 1)", "unit": "" },
+        { "name": "--surface-card", "id": "VariableID:1:4", "type": "COLOR", "value": "rgba(250, 247, 242, 1)", "unit": "" },
+        { "name": "--surface-raised", "id": "VariableID:1:5", "type": "COLOR", "value": "rgba(255, 255, 255, 0.96)", "unit": "" },
+        { "name": "--surface-art", "id": "VariableID:1:6", "type": "COLOR", "value": "rgba(254, 215, 170, 1)", "unit": "" },
+        { "name": "--text-primary", "id": "VariableID:1:7", "type": "COLOR", "value": "rgba(28, 25, 23, 1)", "unit": "" },
+        { "name": "--text-secondary", "id": "VariableID:1:8", "type": "COLOR", "value": "rgba(87, 83, 78, 1)", "unit": "" },
+        { "name": "--overlay-scrim", "id": "VariableID:1:9", "type": "COLOR", "value": "rgba(28, 25, 23, 0.6)", "unit": "" },
+        { "name": "--status-success", "id": "VariableID:1:10", "type": "COLOR", "value": "rgba(22, 163, 74, 0.95)", "unit": "" },
+        { "name": "--status-error", "id": "VariableID:1:11", "type": "COLOR", "value": "rgba(220, 38, 38, 0.95)", "unit": "" },
+        { "name": "--radius-sm", "id": "VariableID:2:1", "type": "FLOAT", "value": "6px", "unit": "" },
+        { "name": "--radius-md", "id": "VariableID:2:2", "type": "FLOAT", "value": "12px", "unit": "" },
+        { "name": "--spacing-sm", "id": "VariableID:2:3", "type": "FLOAT", "value": "8px", "unit": "" },
+        { "name": "--spacing-md", "id": "VariableID:2:4", "type": "FLOAT", "value": "16px", "unit": "" },
+        { "name": "--spacing-lg", "id": "VariableID:2:5", "type": "FLOAT", "value": "24px", "unit": "" }
+    ],
+    "screens": [
+        {
+            "assetName": "ShopCard",
+            "rootNodeId": "40:1",
+            "contentHash": "c41e7a09b2d35f68",
+            "generated": [
+                "tokens.uss",
+                "light.uss",
+                "dark.uss",
+                "PriceTag.uss",
+                "PriceTag.uxml",
+                "ShopCard.uss",
+                "ShopCard.uxml",
+                "images/5e1a7c.png"
+            ],
+            "tokens": [],
+            "nodes": [
+                {
+                    "figmaNodeId": "40:12",
+                    "cssClass": "",
+                    "styleClass": "shop-price-tag",
+                    "doc": "ShopCard",
+                    "path": "1/1/4/1",
+                    "tag": "ui:Instance",
+                    "classes": "shop-price-tag",
+                    "props": []
+                },
+                {
+                    "figmaNodeId": "40:15",
+                    "cssClass": "",
+                    "styleClass": "shop-primary-button",
+                    "doc": "ShopCard",
+                    "path": "1/1/4/2",
+                    "tag": "ui:Button",
+                    "classes": "shop-primary-button unity-button",
+                    "props": [
+                        {
+                            "k": "background-color",
+                            "v": "var(--brand-primary)"
+                        }
+                    ]
+                }
+            ],
+            "components": [],
+            "states": [],
+            "templateNames": [],
+            "classNames": []
+        }
+    ],
+    "matchedMappings": [
+        "Button"
+    ],
+    "foreign": []
+}

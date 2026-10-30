@@ -7,6 +7,90 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Integration with Unity's official **UI Toolkit Connector for Figma** (`com.unity.ui.figma`,
+tested with `0.3.0-exp.1`). The connector imports; this package integrates its output. It adds
+no importer, REST client or second code generator, and the connector stays optional: without it
+nothing below the gated assembly compiles in. Audit and gap analysis:
+`Documentation~/FIGMA-CONNECTOR-AUDIT.md`. Upgrade notes: `Documentation~/MIGRATION-0.8.md`.
+
+### Added
+
+- **Theme contract (`Runtime/Theme/`).** `CuvaraTheme.uss` declares 20 semantic `--cuvara-*`
+  custom properties (colour roles, spacing, radius, font sizes) whose defaults equal the old
+  inline values, so rendering is unchanged. `ConfirmDialog`, `ToastService` and the
+  navigator's `DimsBelow` scrim now carry `cuvara-*` classes instead of inline colours and
+  spacing. The sheet reaches them with no host work, loaded from the package's `Resources`
+  folder; if it cannot be loaded, the old inline styles are applied.
+  `ICuvaraThemeService` / `CuvaraThemeService` attach the base theme, per-game override sheets
+  (for example the connector's `tokens.uss` and a token bridge) and a switchable mode sheet to a
+  root, idempotently, and `Remove` releases a root. Imported screens link their own mode sheet;
+  `RegisterModeSheets` plus `AttachScreen` keep such a screen on the current mode.
+  `RootUIDocument` applies the theme by default (`applyTheme`, `themeOverrides`,
+  `themeModeSheet`) and exposes it as `Theme`; `RegisterUIToolkit()` registers it as
+  `ICuvaraThemeService`. See `Documentation~/THEMING.md`.
+- **Figma import validator** (`Editor/FigmaCore/`, namespace `Cuvara.UIToolkit.FigmaCore`).
+  Checks one connector import folder against package rules: manifest integrity and paths that
+  leave the folder, USS class prefix, literal colours where a token is expected, undefined
+  `var(--token)`, **`var()` in inline styles (`FIG023`, which UI Toolkit cannot clone)**,
+  inline-style and absolute-position budgets, unresolved `url()` and `@import` targets, and
+  `<Style>`/`<Template>` sources. Stable codes `FIG001`-`FIG051`. Unity-free like
+  `Editor/Codegen/Core/`, in the existing ungated Editor assembly, with no reference to the
+  connector. Includes a tolerant `.figma-manifest.json` reader and a reader for saved import
+  results (`FigmaImportResultReader`). See `Documentation~/FIGMA-VALIDATION.md`.
+- **`validate` verb in `Tools~/UxmlCodegenCli`**: `validate <importFolder> [--prefix p]
+  [--max-inline N] [--max-absolute N] [--no-token-colors] [--json]`, exit 0/1/2. Without the
+  verb the CLI is the drift check, unchanged. Good and bad fixtures shaped like connector
+  output in `Tools~/UxmlCodegenCli/Fixtures/figma/`.
+- **Headless import helper** `Tools~/FigmaImport/figma-import.py` (Python stdlib only): calls
+  the connector's Pipeline commands `figma_import_url` / `figma_import_status`, retries busy
+  replies, saves the final (or last pending) result to
+  `Library/CuvaraFigma/last-import-<file>.json` and can run the validator on the result folder.
+- **Real-import lab** `Tools~/FigmaLab/create-lab-project.py` and
+  `Documentation~/FIGMA-REAL-IMPORT.md`: a throwaway project with this package and the
+  connector, the step-by-step real-import procedure, connector compatibility record with source
+  references, unsupported constructs on Unity 6000.3, and an evidence checklist.
+- **Figma integration, Editor side (`Cuvara.UIToolkit.Editor.Figma`).** A new Editor-only
+  assembly, gated by `versionDefines` on `com.unity.ui.figma` (`CUVARA_UITOOLKIT_FIGMA`) and
+  `defineConstraints`. It has no reference to the connector's all-internal assembly and never
+  edits a file in a connector import folder. See `Documentation~/FIGMA-INTEGRATION.md`.
+  - `FigmaProfile` asset (**Assets > Create > Cuvara > UI Toolkit > Figma Profile**): one per
+    game or Figma file, with the connector folder, expected class prefix, token role map,
+    bridge output folder, mode sheets (contained in the connector folder), and screens
+    namespace and folder.
+  - Token bridge (**Tools > Cuvara > Figma > Regenerate Token Bridges**): writes a game-owned
+    `cuvara-theme-bridge.uss` of `--cuvara-x: var(--figma-y);` aliases. Deterministic and
+    content-gated; refuses a folder inside a connector folder; warns on Figma tokens the import
+    does not declare.
+  - Mapping preset (**Tools > Cuvara > Figma > Apply Cuvara Mapping Preset**): adds the Cuvara
+    control rows (`SafeArea` to `Cuvara.UIToolkit.Utilities.SafeAreaElement`) to the active
+    connector mapping asset through `SerializedObject`. Idempotent, never removes or changes a
+    user row, sets the class prefix only when empty, and checks that every typed `uitkControl`
+    resolves to a `VisualElement`.
+  - Diagnostics window (**Window > Cuvara > Figma Diagnostics**): versions against the tested
+    range, active mapping asset and prefix, and per profile the manifest, screens, validator
+    results, token coverage, bridge freshness and the newest saved import result (missing
+    fonts, images that never arrived, dropped features). An `AssetPostprocessor` re-validates
+    after a push (debounced, read-only).
+- **Screen Creator: "Existing UXML (e.g. Figma import)" source.** Creates the view, presenter,
+  model and test for a UXML that already exists, writes no `.uxml` or `.uss`, and gives the view
+  a `public const string AssetKey`. The default source is unchanged.
+- **Sample "Figma Import"** (`Samples~/FigmaImport`): an adoption example with a stand-in for one
+  connector import, a `FigmaProfile`, a generated token bridge, a Model/View/Presenter screen
+  that finds elements without layer names, and light/dark switching that reaches the imported
+  screen and the built-in dialog and toasts.
+- **Documentation**: `MIGRATION-0.8.md`, `TROUBLESHOOTING-FIGMA.md`, `RELEASE-TEST-MATRIX.md`,
+  and a README with a feature overview, documentation index, requirements and optional
+  connector installation.
+- **CI**: a `figma-connector` job (connector installed; fails when no gated test ran), and the
+  validate job runs the Figma validator fixtures and the Python self-tests of the CLI, the
+  import helper and the lab creator.
+
+### Changed
+
+- **Screen Creator** refuses an output folder inside a connector import folder (one holding
+  `.figma-manifest.json`), for either source.
+- **README** install example now pins `#v0.8.0`.
+
 ### Fixed
 
 - **CI: pinned `game-ci/unity-test-runner` to `v4.3.1`.** `Unity Tests`, `Compile samples`
@@ -23,6 +107,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and fix as Cuvara/UnityDots#32, found by grepping the remaining repositories for the
   floating tag after fixing that one — this repo's CI had not run since 2026-09-05, so it
   was broken and silent rather than broken and red.
+- **Docs**: `UXML-CODEGEN.md` no longer points at a drift workflow that does not exist, and
+  `CI.md` no longer claims `Samples~` is never compiled.
 
 ## [0.7.2] - 2026-09-06
 

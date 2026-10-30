@@ -5,6 +5,7 @@ namespace Cuvara.UIToolkit.Flow
     using System.Threading;
     using Cuvara.UIToolkit.Core;
     using Cuvara.UIToolkit.Managers;
+    using Cuvara.UIToolkit.Theme;
     using Cuvara.UIToolkit.View;
     using Cysharp.Threading.Tasks;
 
@@ -310,9 +311,9 @@ namespace Cuvara.UIToolkit.Flow
 
             if (entry.ClosesOnTapOutside)
             {
-                entry.Scrim = CreateScrim(entry);
-                if (layer is Cuvara.UIToolkit.View.VisualElementViewLayer vel)
-                    vel.Element.Add(entry.Scrim);
+                var scrimParent = layer is Cuvara.UIToolkit.View.VisualElementViewLayer vel ? vel.Element : null;
+                entry.Scrim = CreateScrim(entry, scrimParent);
+                scrimParent?.Add(entry.Scrim);
             }
 
             entry.View.ViewSurface.SetParent(layer);
@@ -606,10 +607,13 @@ namespace Cuvara.UIToolkit.Flow
 
         #region Scrim
 
-        private UnityEngine.UIElements.VisualElement CreateScrim(ScreenEntry entry)
+        private UnityEngine.UIElements.VisualElement CreateScrim(ScreenEntry entry, UnityEngine.UIElements.VisualElement parent)
         {
+            // Stretch and picking are inline because they are what the scrim is for; the dim
+            // colour is theme (--cuvara-color-scrim through cuvara-scrim--dim).
             var scrim = new UnityEngine.UIElements.VisualElement();
             scrim.name = "cuvara-scrim";
+            scrim.AddToClassList(CuvaraTheme.ScrimUssClassName);
             scrim.style.position = UnityEngine.UIElements.Position.Absolute;
             scrim.style.left     = 0;
             scrim.style.top      = 0;
@@ -617,7 +621,13 @@ namespace Cuvara.UIToolkit.Flow
             scrim.style.bottom   = 0;
 
             if ((entry.Options & ScreenOptions.DimsBelow) != 0)
-                scrim.style.backgroundColor = new UnityEngine.Color(0f, 0f, 0f, 0.5f);
+            {
+                scrim.AddToClassList(CuvaraTheme.ScrimDimUssClassName);
+
+                // Without a stylesheet the class alone would leave the scrim transparent.
+                if (!CuvaraTheme.EnsureReachable(scrim, parent))
+                    scrim.style.backgroundColor = new UnityEngine.Color(0f, 0f, 0f, 0.5f);
+            }
 
             scrim.pickingMode = UnityEngine.UIElements.PickingMode.Position;
             scrim.RegisterCallback<UnityEngine.UIElements.PointerDownEvent>(
