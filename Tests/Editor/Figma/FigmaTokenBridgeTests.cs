@@ -159,7 +159,7 @@ namespace Cuvara.UIToolkit.Editor.Figma.Tests
         [Test]
         public void DefaultRoles_AreValidDistinctCuvaraVariables()
         {
-            Assert.That(FigmaTokenBridge.DefaultRoles, Has.Count.EqualTo(20));
+            Assert.That(FigmaTokenBridge.DefaultRoles.Count, Is.EqualTo(20));
             Assert.That(FigmaTokenBridge.DefaultRoles, Is.Unique);
             foreach (var role in FigmaTokenBridge.DefaultRoles) Assert.That(role, Does.Match("^--cuvara-[a-z0-9-]+$"));
 
