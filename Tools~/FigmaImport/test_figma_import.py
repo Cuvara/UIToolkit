@@ -196,6 +196,28 @@ class HelperTests(unittest.TestCase):
         self.assertEqual((document["ok"], document["code"]), (False, "expired"))
         self.assertNotIn("result", document)
 
+    def test_max_wait_timeout_saves_the_pending_request_as_unfinished(self):
+        with MockPipeline([describe("queued")], [describe("exporting")]) as mock:
+            self.write_port_file(mock.port)
+            code, _, err = self.run_helper("--max-wait", "0.3")
+
+        self.assertEqual(code, 1, err)
+        self.assertIn("still 'exporting'", err)
+        document = self.saved()
+        self.assertFalse(document["ok"])
+        self.assertNotIn("result", document)
+        self.assertEqual(document.get("code", ""), "")
+        self.assertEqual(document["request"]["state"], "exporting")
+        self.assertIs(document["request"]["finished"], False)
+        self.assertEqual(document["request"]["requestId"], "r-1a2b3c4d")
+        self.assertEqual(document["request"]["waitedSeconds"], 0.3)
+
+    def test_finished_requests_are_saved_as_finished(self):
+        with MockPipeline([describe("queued")], [describe("done", result=DONE_RESULT)]) as mock:
+            self.write_port_file(mock.port)
+            self.run_helper()
+        self.assertIs(self.saved()["request"]["finished"], True)
+
     def test_busy_and_too_many_commands_are_retried(self):
         with MockPipeline([503, 429, 504, describe("queued")], [describe("done", result=DONE_RESULT)]) as mock:
             self.write_port_file(mock.port)

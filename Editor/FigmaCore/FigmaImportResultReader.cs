@@ -46,6 +46,10 @@ namespace Cuvara.UIToolkit.FigmaCore
         /// <summary>The request state when known: <c>done</c>, <c>failed</c>, <c>expired</c>.</summary>
         public string State = string.Empty;
 
+        /// <summary>False when the request was still open (<c>queued</c>, <c>exporting</c>,
+        /// <c>importing</c>) when the helper stopped waiting: there is no import result yet.</summary>
+        public bool Finished = true;
+
         /// <summary>Why the plugin failed a request, when it said.</summary>
         public string Reason = string.Empty;
 
@@ -94,7 +98,9 @@ namespace Cuvara.UIToolkit.FigmaCore
     /// (<c>FigmaImportResult.cs</c>, <c>FigmaRequestStore.Describe</c>).</para>
     ///
     /// <para>Severity: a failed import (<c>ok</c> false), USS errors, files Unity did not import
-    /// and a schema mismatch are errors. Facts keep the connector's own severity (<c>warning</c>
+    /// and a schema mismatch are errors. A request the helper stopped waiting for while it was
+    /// still <c>queued</c>, <c>exporting</c> or <c>importing</c> is an incomplete import: a
+    /// warning, not a failure. Facts keep the connector's own severity (<c>warning</c>
     /// is a warning, <c>message</c> is info; an unknown severity is a warning, as an unknown note
     /// kind is a warning in the connector). Input warnings are warnings. Notes, the connector's
     /// localized text, are used only when a result carries no facts.</para>
@@ -115,6 +121,7 @@ namespace Cuvara.UIToolkit.FigmaCore
         public const string CodeInputWarning   = "cuvara.import.input-warning";
         public const string CodeNote           = "cuvara.import.note";
         public const string CodeSummary        = "cuvara.import.summary";
+        public const string CodeIncomplete     = "cuvara.import.incomplete";
 
         /// <summary>Prefix of a fact's code; the connector's kind follows, as in <c>cuvara.import.fact.MissingFonts</c>.</summary>
         public const string CodeFactPrefix = "cuvara.import.fact.";
@@ -176,13 +183,13 @@ namespace Cuvara.UIToolkit.FigmaCore
                 root = inner;
             }
 
-            // A figma_import_status reply: the request fields, and the import under "result".
+            // A figma_import_status reply: the request fields, and the import under "result" once
+            // the request finished (an open request has no "result" yet).
             var result = root;
-            if (FigmaJson.Member(root, "result") is Dictionary<string, object> nested
-                && (FigmaJson.Member(root, "state") is string || FigmaJson.Member(root, "requestId") is string))
+            if (FigmaJson.Member(root, "state") is string || FigmaJson.Member(root, "requestId") is string)
             {
                 ReadRequest(root, info);
-                result = nested;
+                if (FigmaJson.Member(root, "result") is Dictionary<string, object> nested) result = nested;
             }
 
             // The helper's saved file: the result with a "request" object beside it.
@@ -214,6 +221,9 @@ namespace Cuvara.UIToolkit.FigmaCore
             info.Notes = Strings(result, "notes");
             info.InputWarnings = Strings(result, "inputWarnings");
             info.Facts = Facts(result);
+
+            // A request the connector still had open has no import result yet, whatever "ok" says.
+            if (info.State == "queued" || info.State == "exporting" || info.State == "importing") info.Finished = false;
             return info;
         }
 
@@ -235,7 +245,13 @@ namespace Cuvara.UIToolkit.FigmaCore
 
             diagnostics.Add(Make(CodeSummary, FigmaDiagnosticSeverity.Info, file, Summary(info)));
 
-            if (!info.Ok)
+            if (!info.Finished)
+            {
+                diagnostics.Add(Make(CodeIncomplete, FigmaDiagnosticSeverity.Warning, file,
+                    $"The last import did not finish while the helper waited (request {(info.RequestId.Length > 0 ? info.RequestId : "?")} was still '{info.State}'). "
+                    + "It may still complete: check the Console and the import folder, or run figma-import.py again with the same link (it returns the same request)."));
+            }
+            else if (!info.Ok)
             {
                 var message = new StringBuilder("The last import failed");
                 if (info.Code.Length > 0) message.Append(" (").Append(info.Code).Append(')');
@@ -337,7 +353,7 @@ namespace Cuvara.UIToolkit.FigmaCore
             var builder = new StringBuilder("Last import");
             if (info.FileName.Length > 0) builder.Append(" of '").Append(info.FileName).Append('\'');
             if (info.SavedAt.Length > 0) builder.Append(" at ").Append(info.SavedAt);
-            builder.Append(": ").Append(info.Ok ? "ok" : "failed");
+            builder.Append(": ").Append(!info.Finished ? "incomplete" : info.Ok ? "ok" : "failed");
             if (info.State.Length > 0) builder.Append(" (").Append(info.State).Append(')');
             builder.Append(", ").Append(info.Files.Count.ToString(CultureInfo.InvariantCulture)).Append(" file(s) written, ");
             builder.Append(info.Removed.Count.ToString(CultureInfo.InvariantCulture)).Append(" removed");
@@ -391,6 +407,7 @@ namespace Cuvara.UIToolkit.FigmaCore
             info.Reason = FirstNonEmpty(FigmaJson.MemberString(node, "reason"), info.Reason);
             info.Url = FirstNonEmpty(FigmaJson.MemberString(node, "url"), info.Url);
             info.SavedAt = FirstNonEmpty(FigmaJson.MemberString(node, "savedAt"), info.SavedAt);
+            if (FigmaJson.Member(node, "finished") is bool finished && !finished) info.Finished = false;
             info.Code = FirstNonEmpty(FigmaJson.MemberString(node, "code"), info.Code);
             info.Error = FirstNonEmpty(FigmaJson.MemberString(node, "error"), info.Error);
         }

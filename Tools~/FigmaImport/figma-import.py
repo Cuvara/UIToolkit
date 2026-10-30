@@ -103,13 +103,19 @@ def figma_file_name(url):
     return parts[1] if len(parts) >= 2 else ""
 
 
-def result_document(reply, url):
+def result_document(reply, url, waited=None):
     """What --save-result writes: the connector's import result when the reply has one (a
     FigmaImportResult as figma_import_status returns it), else the reply itself (a refusal or an
-    expired request: ok, code, error). A "request" object adds what only the helper knows."""
+    expired request: ok, code, error). A "request" object adds what only the helper knows.
+
+    A request still open when --max-wait ran out (state queued, exporting or importing) is saved
+    with ok false and no code: no import result exists yet, and request.finished is false."""
     result = reply.get("result")
     document = dict(result) if isinstance(result, dict) else {
         key: reply[key] for key in ("ok", "code", "error") if key in reply}
+    finished = reply.get("state") in FINISHED_STATES or reply.get("state") is None
+    if not finished:
+        document["ok"] = False
     document.setdefault("ok", False)
     document["request"] = {
         "requestId": reply.get("requestId", ""),
@@ -122,7 +128,10 @@ def result_document(reply, url):
         "url": url,
         "savedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "helper": "figma-import.py",
+        "finished": finished,
     }
+    if waited is not None:
+        document["request"]["waitedSeconds"] = round(float(waited), 1)
     return document
 
 
@@ -274,11 +283,11 @@ def parse_args(argv):
     return parser.parse_args(argv)
 
 
-def keep_result(args, project_root, reply):
+def keep_result(args, project_root, reply, waited=None):
     """Saves the final reply's import result unless --no-save-result."""
     if args.no_save_result:
         return
-    document = result_document(reply, args.url)
+    document = result_document(reply, args.url, waited)
     save_result(args.save_result or default_result_path(project_root, document), document)
 
 
@@ -324,6 +333,8 @@ def main(argv):
             if time.monotonic() >= deadline:
                 print(json.dumps(reply, indent=2))
                 print(f"error: still '{state}' after {args.max_wait:.0f} s", file=sys.stderr)
+                # Saved as unfinished, so the diagnostics window shows the attempt; the request may still finish.
+                keep_result(args, project_root, reply, waited=args.max_wait)
                 return 1
             wait = reply.get("retryAfterSeconds") or 3
             note = reply.get("waitingFor")
