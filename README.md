@@ -127,7 +127,10 @@ public sealed class AddressablesVisualTreeAssetLoader : IVisualTreeAssetLoader
 | `Runtime/Theme/` | `CuvaraTheme.uss` (`--cuvara-*` theme contract), `ICuvaraThemeService` — see [THEMING.md](Documentation~/THEMING.md) |
 | `Runtime/Ecs/` | DOTS/ECS presentation adapter — optional, needs `com.unity.entities` |
 | `Editor/Codegen/` | UXML → typed view codegen (menu + auto-regen); `Core/` is Unity-free |
-| `Tools~/UxmlCodegenCli/` | plain-`dotnet` CI drift check over the committed generated bindings |
+| `Editor/FigmaCore/` | Unity-free validator for `com.unity.ui.figma` import folders — see [FIGMA-VALIDATION.md](Documentation~/FIGMA-VALIDATION.md) |
+| `Editor/Figma/` | optional Figma connector integration (profiles, token bridge, mapping preset, diagnostics); compiles only with `com.unity.ui.figma` — see [FIGMA-INTEGRATION.md](Documentation~/FIGMA-INTEGRATION.md) |
+| `Tools~/UxmlCodegenCli/` | plain-`dotnet` CLI: drift check over the committed generated bindings, and `validate` for Figma import folders |
+| `Tools~/FigmaImport/` | `figma-import.py`: headless Figma frame import through the connector's Pipeline commands |
 | `Samples~/NotificationPopup/` | the smallest complete screen, host-free |
 | `Samples~/EcsHud/` | a HUD driven from ECS, through the adapter — and the reference hybrid data-binding screen |
 | `Tests/` | PlayMode tests (113) — they need a live panel, which EditMode has not got |

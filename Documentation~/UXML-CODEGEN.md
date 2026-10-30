@@ -200,7 +200,7 @@ Consequences:
 | `Require<T>` | `Runtime/Utilities/VisualElementQueryExtensions.cs` (`Cuvara.UIToolkit`) |
 | Pure core (no Unity) | `Editor/Codegen/Core/` (`Cuvara.UIToolkit.Editor`, namespace `Cuvara.UIToolkit.Codegen`) |
 | Menu + postprocessor | `Editor/Codegen/` |
-| Drift CLI | `Tools~/UxmlCodegenCli/` — compiles `Editor/Codegen/Core/` with plain `dotnet` |
+| Drift CLI | `Tools~/UxmlCodegenCli/` — compiles `Editor/Codegen/Core/` with plain `dotnet`; the same CLI's `validate` verb checks Figma import folders (`FIGMA-VALIDATION.md`) |
 | Generator tests (string fixtures, also run under plain `dotnet`) | `Tests/Editor/UxmlBindingGeneratorTests.cs` |
 | `Require` + generated-class tests | `Tests/Runtime/RequireQueryTests.cs`, `Tests/Runtime/GeneratedConfirmPopupTests.cs` |
 | Enrolled examples, checked by CI | `Tests/Runtime/ConfirmPopup.uxml` + `Tests/Runtime/Generated/ConfirmPopup.uxml.g.cs`; `Samples~/EcsHud/VitalsView.uxml` + its `Generated/VitalsView.uxml.g.cs` (the partial-view half of the hybrid data-binding sample — see `HYBRID-DATA-BINDING.md`) |

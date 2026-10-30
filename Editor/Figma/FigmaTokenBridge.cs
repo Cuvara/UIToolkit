@@ -92,8 +92,20 @@ namespace Cuvara.UIToolkit.Editor.Figma
             "--cuvara-color-primary",
             "--cuvara-color-on-primary",
             "--cuvara-color-scrim",
+            "--cuvara-color-toast-info",
+            "--cuvara-color-toast-success",
+            "--cuvara-color-toast-warning",
+            "--cuvara-color-toast-error",
+            "--cuvara-color-on-toast",
+            "--cuvara-radius-sm",
             "--cuvara-radius-md",
+            "--cuvara-space-xs",
+            "--cuvara-space-sm",
             "--cuvara-space-md",
+            "--cuvara-space-lg",
+            "--cuvara-space-xl",
+            "--cuvara-font-size-sm",
+            "--cuvara-font-size-md",
         };
 
         private static readonly UTF8Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);

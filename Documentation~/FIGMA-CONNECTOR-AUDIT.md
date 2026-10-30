@@ -192,3 +192,17 @@ G9 **ScreenCreator source option.** The wizard can create View, Presenter and Mo
 | Pipeline port/token protocol change | the helper script is isolated in `Tools~`, never shipped to runtime |
 | Runtime path of `<ui:Instance>` children (TemplateContainer level) | must be confirmed against a real import before G4 is released; a test fixture records the expected tree |
 | 0.x minor bumps rewrite generated files | regenerate bindings after an upgrade; drift check catches stale `.g.cs` |
+
+## 8. Implementation status (2026-10-30, branch `feat/uitoolkit/figma-connector`)
+
+| Gap | Status | Where |
+|---|---|---|
+| G1 theme contract | done | `Runtime/Theme/`, `Documentation~/THEMING.md` |
+| G2 token bridge | done | `Editor/Figma/FigmaTokenBridge.cs` |
+| G3 mapping preset | done | `Editor/Figma/FigmaMappingPreset*.cs` |
+| G4 node-id bindings | deferred | waits for a real import to confirm instance paths |
+| G5 validator | done, partial | `Editor/FigmaCore/`, CLI `validate`, `Documentation~/FIGMA-VALIDATION.md`. Not yet: non-sprite image check, missing-font check (the manifest has no font notes; needs the command result), binding sidecar ids (G4), `project://database/Packages/...` paths |
+| G6 diagnostics | done | `Editor/Figma/FigmaDiagnosticsWindow.cs`, `FigmaImportPostprocessor.cs` (Unity does not import dot-files, so a push triggers re-validation through the rewritten `.uxml`/`.uss`, not the manifest) |
+| G7 profiles | done | `Editor/Figma/FigmaProfile.cs`. The connector class prefix is one project-wide setting, so two games with different prefixes in one project conflict |
+| G8 headless import helper | done | `Tools~/FigmaImport/figma-import.py` |
+| G9 ScreenCreator source | done | `Editor/ScreenCreator/` ("Existing UXML") |
