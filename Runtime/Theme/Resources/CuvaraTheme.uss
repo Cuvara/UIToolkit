@@ -1,0 +1,147 @@
+/*
+ * Cuvara theme contract: the semantic custom properties the package's built-in UI reads,
+ * and the component rules that read them.
+ *
+ * Every default below equals the inline value the package used before the theme contract existed, so a host that
+ * never overrides anything renders exactly as before. Colour channels are written as
+ * 0-255 numbers derived from the old 0-1 floats (0.15 * 255 = 38.25), not rounded.
+ *
+ * Override the variables, not the component rules: attach a sheet after this one that sets
+ * --cuvara-* (directly, or as var(--figma-token) aliases) on the same root. See
+ * Documentation~/THEMING.md for the token table and the bridge-sheet pattern.
+ *
+ * Lives in a Resources folder so the components can load it without any host wiring
+ * (CuvaraTheme.DefaultStyleSheet).
+ */
+
+:root {
+    /* Colour roles */
+    --cuvara-color-surface: rgba(38.25, 38.25, 38.25, 1);
+    --cuvara-color-surface-raised: rgba(63.75, 63.75, 76.5, 0.95);
+    --cuvara-color-on-surface: rgba(255, 255, 255, 1);
+    --cuvara-color-primary: rgba(51, 127.5, 229.5, 1);
+    --cuvara-color-on-primary: rgba(255, 255, 255, 1);
+    --cuvara-color-scrim: rgba(0, 0, 0, 0.5);
+
+    --cuvara-color-toast-info: var(--cuvara-color-surface-raised);
+    --cuvara-color-toast-success: rgba(51, 178.5, 76.5, 0.95);
+    --cuvara-color-toast-warning: rgba(229.5, 178.5, 25.5, 0.95);
+    --cuvara-color-toast-error: rgba(229.5, 63.75, 51, 0.95);
+    --cuvara-color-on-toast: var(--cuvara-color-on-surface);
+
+    /* Spacing scale */
+    --cuvara-space-xs: 8px;
+    --cuvara-space-sm: 10px;
+    --cuvara-space-md: 15px;
+    --cuvara-space-lg: 20px;
+    --cuvara-space-xl: 30px;
+
+    /* Radius scale */
+    --cuvara-radius-sm: 6px;
+    --cuvara-radius-md: 8px;
+
+    /* Font sizes */
+    --cuvara-font-size-sm: 14px;
+    --cuvara-font-size-md: 16px;
+}
+
+/* ---- Navigator scrim (CloseOnTapOutside). Position and picking stay inline: they are functional. */
+
+.cuvara-scrim--dim {
+    background-color: var(--cuvara-color-scrim, rgba(0, 0, 0, 0.5));
+}
+
+/* ---- ConfirmDialog. The overlay's full-screen stretch stays inline: it is what makes it modal. */
+
+.cuvara-confirm-dialog {
+    background-color: var(--cuvara-color-scrim, rgba(0, 0, 0, 0.5));
+    align-items: center;
+    justify-content: center;
+}
+
+.cuvara-confirm-dialog__panel {
+    background-color: var(--cuvara-color-surface, rgba(38.25, 38.25, 38.25, 1));
+    padding-top: var(--cuvara-space-lg, 20px);
+    padding-bottom: var(--cuvara-space-lg, 20px);
+    padding-left: var(--cuvara-space-xl, 30px);
+    padding-right: var(--cuvara-space-xl, 30px);
+    border-top-left-radius: var(--cuvara-radius-md, 8px);
+    border-top-right-radius: var(--cuvara-radius-md, 8px);
+    border-bottom-left-radius: var(--cuvara-radius-md, 8px);
+    border-bottom-right-radius: var(--cuvara-radius-md, 8px);
+    min-width: 300px;
+    max-width: 500px;
+}
+
+.cuvara-confirm-dialog__message {
+    color: var(--cuvara-color-on-surface, rgba(255, 255, 255, 1));
+    font-size: var(--cuvara-font-size-md, 16px);
+    margin-bottom: var(--cuvara-space-lg, 20px);
+    white-space: normal;
+}
+
+.cuvara-confirm-dialog__buttons {
+    flex-direction: row;
+    justify-content: flex-end;
+}
+
+.cuvara-confirm-dialog__cancel {
+    margin-right: var(--cuvara-space-sm, 10px);
+}
+
+/*
+ * The pseudo-class variants exist because the old inline colours beat every state of the
+ * default Button theme; a single class selector loses to its hover/active rules.
+ */
+.cuvara-confirm-dialog__confirm,
+.cuvara-confirm-dialog__confirm:hover,
+.cuvara-confirm-dialog__confirm:active,
+.cuvara-confirm-dialog__confirm:focus,
+.cuvara-confirm-dialog__confirm:hover:active {
+    background-color: var(--cuvara-color-primary, rgba(51, 127.5, 229.5, 1));
+    color: var(--cuvara-color-on-primary, rgba(255, 255, 255, 1));
+}
+
+/* ---- ToastService. The container's absolute position and picking stay inline: they are functional. */
+
+.cuvara-toast-container {
+    top: var(--cuvara-space-lg, 20px);
+    right: var(--cuvara-space-lg, 20px);
+    width: 300px;
+    flex-direction: column;
+}
+
+.cuvara-toast {
+    background-color: var(--cuvara-color-toast-info, rgba(63.75, 63.75, 76.5, 0.95));
+    padding-top: var(--cuvara-space-sm, 10px);
+    padding-bottom: var(--cuvara-space-sm, 10px);
+    padding-left: var(--cuvara-space-md, 15px);
+    padding-right: var(--cuvara-space-md, 15px);
+    margin-bottom: var(--cuvara-space-xs, 8px);
+    border-top-left-radius: var(--cuvara-radius-sm, 6px);
+    border-top-right-radius: var(--cuvara-radius-sm, 6px);
+    border-bottom-left-radius: var(--cuvara-radius-sm, 6px);
+    border-bottom-right-radius: var(--cuvara-radius-sm, 6px);
+}
+
+.cuvara-toast--info {
+    background-color: var(--cuvara-color-toast-info, rgba(63.75, 63.75, 76.5, 0.95));
+}
+
+.cuvara-toast--success {
+    background-color: var(--cuvara-color-toast-success, rgba(51, 178.5, 76.5, 0.95));
+}
+
+.cuvara-toast--warning {
+    background-color: var(--cuvara-color-toast-warning, rgba(229.5, 178.5, 25.5, 0.95));
+}
+
+.cuvara-toast--error {
+    background-color: var(--cuvara-color-toast-error, rgba(229.5, 63.75, 51, 0.95));
+}
+
+.cuvara-toast__label {
+    color: var(--cuvara-color-on-toast, rgba(255, 255, 255, 1));
+    font-size: var(--cuvara-font-size-sm, 14px);
+    white-space: normal;
+}

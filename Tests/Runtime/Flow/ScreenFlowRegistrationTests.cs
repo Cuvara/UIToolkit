@@ -4,6 +4,7 @@ namespace Cuvara.UIToolkit.Flow.Tests
     using Cuvara.UIToolkit.Core;
     using Cuvara.UIToolkit.Flow;
     using Cuvara.UIToolkit.Managers;
+    using Cuvara.UIToolkit.Theme;
     using Cuvara.UIToolkit.VContainer;
     using Cysharp.Threading.Tasks;
     using NUnit.Framework;
@@ -124,6 +125,24 @@ namespace Cuvara.UIToolkit.Flow.Tests
             Assert.That(container.Resolve<IScreenScopeFactory>(), Is.Not.Null);
             Assert.That(container.Resolve<System.Func<ViewLayers>>()().Screen, Is.Not.Null, "the layers must come from the scene's RootUIDocument, read late");
             Assert.That(container.Resolve<RootUIDocument>(), Is.Not.Null);
+        }
+
+        [UnityTest]
+        public IEnumerator ThemeServiceIsTheDocumentsOwn_AndTheRootIsThemed()
+        {
+            var container = this.BuildContainer();
+
+            yield return null;
+
+            var document = container.Resolve<RootUIDocument>();
+            var theme    = container.Resolve<ICuvaraThemeService>();
+
+            Assert.That(theme, Is.SameAs(document.Theme), "one service, so a mode switch through DI reaches the document");
+
+            var root = document.RootVisualElement;
+            _ = document.Layers;  // resolving the layers is what applies the theme
+            Assert.That(root.ClassListContains(CuvaraTheme.ThemeRootUssClassName), Is.True);
+            Assert.That(root.styleSheets.Contains(CuvaraTheme.DefaultStyleSheet), Is.True);
         }
 
         [UnityTest]

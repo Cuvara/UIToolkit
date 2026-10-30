@@ -1,6 +1,7 @@
 namespace Cuvara.UIToolkit.Managers
 {
     using Cuvara.UIToolkit.Core;
+    using Cuvara.UIToolkit.Theme;
     using Cuvara.UIToolkit.View;
     using UnityEngine;
     using UnityEngine.UIElements;
@@ -57,6 +58,15 @@ namespace Cuvara.UIToolkit.Managers
         [SerializeField] private string rootUIClosedElementName  = "root-ui-closed";
         [SerializeField] private string rootUIOverlayElementName = "root-ui-overlay";
 
+        [Tooltip("Attach the Cuvara theme to the document root when the layers resolve. Off: call Theme.Apply yourself.")]
+        [SerializeField] private bool applyTheme = true;
+
+        [Tooltip("Per-game sheets attached after the base theme, in order: e.g. the Figma connector's tokens.uss, then a bridge sheet that sets --cuvara-* to var(--figma-token).")]
+        [SerializeField] private StyleSheet[] themeOverrides = new StyleSheet[0];
+
+        [Tooltip("Initial mode sheet (light, dark, ...). Switch at runtime with Theme.SetModeSheet.")]
+        [SerializeField] private StyleSheet themeModeSheet;
+
         public UIDocument UIDocument => this.uiDocument;
 
         public VisualElement RootUIShowElement    { get { this.EnsureResolved(); return this.showElement; } }
@@ -75,6 +85,33 @@ namespace Cuvara.UIToolkit.Managers
         /// <summary>The same three, as one value.</summary>
         public ViewLayers Layers => new(this.ShowLayer, this.ClosedLayer, this.OverlayLayer);
 
+        /// <summary>
+        /// The theme service for this document, configured from the serialized override and mode
+        /// sheets. Created on first access; applied to <see cref="RootVisualElement"/> when the
+        /// layers resolve, unless <c>applyTheme</c> is off.
+        /// </summary>
+        public ICuvaraThemeService Theme
+        {
+            get
+            {
+                if (this.theme != null) return this.theme;
+
+                this.theme = new CuvaraThemeService();
+
+                if (this.themeOverrides != null)
+                {
+                    foreach (var sheet in this.themeOverrides)
+                    {
+                        if (sheet != null) this.theme.AddOverride(sheet);
+                    }
+                }
+
+                if (this.themeModeSheet != null) this.theme.SetModeSheet(this.themeModeSheet);
+
+                return this.theme;
+            }
+        }
+
         /// <summary>The panel root, or null if the UIDocument has no source asset.</summary>
         public VisualElement RootVisualElement
         {
@@ -91,6 +128,8 @@ namespace Cuvara.UIToolkit.Managers
         private VisualElementViewLayer showLayer, closedLayer, overlayLayer;
 
         private bool resolved;
+
+        private CuvaraThemeService theme;
 
         private void Awake() { this.EnsureResolved(); }
 
@@ -133,6 +172,8 @@ namespace Cuvara.UIToolkit.Managers
             this.overlayLayer = new(this.overlayElement);
 
             this.resolved = true;
+
+            if (this.applyTheme) this.Theme.Apply(root);
         }
 
         private VisualElement Resolve(VisualElement root, string elementName)

@@ -124,12 +124,22 @@ public sealed class AddressablesVisualTreeAssetLoader : IVisualTreeAssetLoader
 | `Runtime/Collections/` | list, grid and multi-template adapters + item view/presenter bases |
 | `Runtime/Utilities/` | `SafeAreaElement`, `SafeAreaCalculator`, `PanelScaleRatio`, `Require<T>` |
 | `Runtime/Input/` | back-navigation event source |
+| `Runtime/Theme/` | `CuvaraTheme.uss` (`--cuvara-*` theme contract), `ICuvaraThemeService` — see [THEMING.md](Documentation~/THEMING.md) |
 | `Runtime/Ecs/` | DOTS/ECS presentation adapter — optional, needs `com.unity.entities` |
 | `Editor/Codegen/` | UXML → typed view codegen (menu + auto-regen); `Core/` is Unity-free |
 | `Tools~/UxmlCodegenCli/` | plain-`dotnet` CI drift check over the committed generated bindings |
 | `Samples~/NotificationPopup/` | the smallest complete screen, host-free |
 | `Samples~/EcsHud/` | a HUD driven from ECS, through the adapter — and the reference hybrid data-binding screen |
 | `Tests/` | PlayMode tests (113) — they need a live panel, which EditMode has not got |
+
+## Theming
+
+The built-in UI (`ConfirmDialog`, `ToastService`, the navigator's tap-outside scrim) is styled by
+`cuvara-*` classes reading semantic `--cuvara-*` variables. The defaults equal the old inline
+values, and the stylesheet reaches those elements with no host work. A game re-skins them by
+attaching a sheet that sets the variables, for example a bridge from its Figma tokens, and
+switches light/dark with `ICuvaraThemeService.SetModeSheet`. Token table and override pattern:
+[Documentation~/THEMING.md](Documentation~/THEMING.md).
 
 ## Typed queries and UXML codegen
 

@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using Cuvara.UIToolkit.Theme;
 using Cysharp.Threading.Tasks;
 using UnityEngine.UIElements;
 
@@ -36,46 +37,37 @@ namespace Cuvara.UIToolkit.Flow
 
             var tcs = new UniTaskCompletionSource<bool>();
 
-            // Build UI
+            // Build UI. Visuals come from the cuvara-confirm-dialog classes in CuvaraTheme.uss;
+            // only the full-screen stretch is inline, because it is what makes the dialog modal.
             var overlay = new VisualElement();
+            overlay.AddToClassList(CuvaraTheme.ConfirmDialogUssClassName);
             overlay.style.position = Position.Absolute;
             overlay.style.left = 0; overlay.style.right = 0;
             overlay.style.top = 0; overlay.style.bottom = 0;
-            overlay.style.backgroundColor = new StyleColor(new UnityEngine.Color(0, 0, 0, 0.5f));
-            overlay.style.alignItems = Align.Center;
-            overlay.style.justifyContent = Justify.Center;
 
             var dialog = new VisualElement();
-            dialog.style.backgroundColor = new StyleColor(new UnityEngine.Color(0.15f, 0.15f, 0.15f, 1f));
-            dialog.style.paddingTop = 20; dialog.style.paddingBottom = 20;
-            dialog.style.paddingLeft = 30; dialog.style.paddingRight = 30;
-            dialog.style.borderTopLeftRadius = 8; dialog.style.borderTopRightRadius = 8;
-            dialog.style.borderBottomLeftRadius = 8; dialog.style.borderBottomRightRadius = 8;
-            dialog.style.minWidth = 300;
-            dialog.style.maxWidth = 500;
+            dialog.AddToClassList(CuvaraTheme.ConfirmDialogPanelUssClassName);
 
             var label = new Label(message);
-            label.style.color = new StyleColor(UnityEngine.Color.white);
-            label.style.fontSize = 16;
-            label.style.marginBottom = 20;
-            label.style.whiteSpace = WhiteSpace.Normal;
+            label.AddToClassList(CuvaraTheme.ConfirmDialogMessageUssClassName);
             dialog.Add(label);
 
             var buttons = new VisualElement();
-            buttons.style.flexDirection = FlexDirection.Row;
-            buttons.style.justifyContent = Justify.FlexEnd;
+            buttons.AddToClassList(CuvaraTheme.ConfirmDialogButtonsUssClassName);
 
             var cancelBtn = new Button(() => { tcs.TrySetResult(false); }) { text = cancelLabel };
-            cancelBtn.style.marginRight = 10;
+            cancelBtn.AddToClassList(CuvaraTheme.ConfirmDialogCancelUssClassName);
             buttons.Add(cancelBtn);
 
             var confirmBtn = new Button(() => { tcs.TrySetResult(true); }) { text = confirmLabel };
-            confirmBtn.style.backgroundColor = new StyleColor(new UnityEngine.Color(0.2f, 0.5f, 0.9f, 1f));
-            confirmBtn.style.color = new StyleColor(UnityEngine.Color.white);
+            confirmBtn.AddToClassList(CuvaraTheme.ConfirmDialogConfirmUssClassName);
             buttons.Add(confirmBtn);
 
             dialog.Add(buttons);
             overlay.Add(dialog);
+
+            if (!CuvaraTheme.EnsureReachable(overlay, parent))
+                ApplyFallbackStyle(overlay, dialog, label, buttons, cancelBtn, confirmBtn);
 
             // Dismiss on overlay click (outside dialog)
             overlay.RegisterCallback<PointerDownEvent>(evt =>
@@ -99,6 +91,38 @@ namespace Cuvara.UIToolkit.Flow
             {
                 parent.Remove(overlay);
             }
+        }
+
+        /// <summary>
+        /// The inline styles this dialog used before the theme contract, applied only when the
+        /// theme stylesheet cannot be loaded, so rendering never regresses.
+        /// </summary>
+        private static void ApplyFallbackStyle(VisualElement overlay, VisualElement dialog, Label label, VisualElement buttons, Button cancelBtn, Button confirmBtn)
+        {
+            overlay.style.backgroundColor = new StyleColor(new UnityEngine.Color(0, 0, 0, 0.5f));
+            overlay.style.alignItems = Align.Center;
+            overlay.style.justifyContent = Justify.Center;
+
+            dialog.style.backgroundColor = new StyleColor(new UnityEngine.Color(0.15f, 0.15f, 0.15f, 1f));
+            dialog.style.paddingTop = 20; dialog.style.paddingBottom = 20;
+            dialog.style.paddingLeft = 30; dialog.style.paddingRight = 30;
+            dialog.style.borderTopLeftRadius = 8; dialog.style.borderTopRightRadius = 8;
+            dialog.style.borderBottomLeftRadius = 8; dialog.style.borderBottomRightRadius = 8;
+            dialog.style.minWidth = 300;
+            dialog.style.maxWidth = 500;
+
+            label.style.color = new StyleColor(UnityEngine.Color.white);
+            label.style.fontSize = 16;
+            label.style.marginBottom = 20;
+            label.style.whiteSpace = WhiteSpace.Normal;
+
+            buttons.style.flexDirection = FlexDirection.Row;
+            buttons.style.justifyContent = Justify.FlexEnd;
+
+            cancelBtn.style.marginRight = 10;
+
+            confirmBtn.style.backgroundColor = new StyleColor(new UnityEngine.Color(0.2f, 0.5f, 0.9f, 1f));
+            confirmBtn.style.color = new StyleColor(UnityEngine.Color.white);
         }
     }
 }

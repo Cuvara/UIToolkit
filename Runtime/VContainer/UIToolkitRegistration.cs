@@ -2,6 +2,7 @@ namespace Cuvara.UIToolkit.VContainer
 {
     using Cuvara.UIToolkit.Core;
     using Cuvara.UIToolkit.Managers;
+    using Cuvara.UIToolkit.Theme;
     using Cuvara.UIToolkit.View;
     using global::VContainer;
     using global::VContainer.Unity;
@@ -46,11 +47,16 @@ namespace Cuvara.UIToolkit.VContainer
         /// one thing the package cannot supply, because only the host knows whether a key
         /// means an Addressables address, a <c>Resources</c> path, or a dictionary lookup.
         /// Register yours before or after calling this.</para>
+        ///
+        /// <para><see cref="ICuvaraThemeService"/> resolves to the document's own
+        /// <see cref="RootUIDocument.Theme"/>, so a host that switches mode sheets through
+        /// injection and the document that applied the theme share one instance.</para>
         /// </remarks>
         public static IContainerBuilder RegisterUIToolkit(this IContainerBuilder builder)
         {
             builder.RegisterComponentInHierarchy<RootUIDocument>();
             builder.Register<UIToolkitViewFactory>(Lifetime.Singleton);
+            builder.Register<ICuvaraThemeService>(resolver => resolver.Resolve<RootUIDocument>().Theme, Lifetime.Singleton);
 
             return builder;
         }
