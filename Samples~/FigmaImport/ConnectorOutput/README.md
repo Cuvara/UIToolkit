@@ -12,7 +12,7 @@ yours write into that folder.
 
 | File | What the connector writes it for |
 |---|---|
-| `ShopCard.uxml`, `ShopCard.uss` | the frame. Links `tokens.uss`, the mode it resolved to (`light.uss`) and its own sheet. Plain layers carry their whole style inline; bound values are `var(--token)` |
+| `ShopCard.uxml`, `ShopCard.uss` | the frame. Links `tokens.uss`, the mode it resolved to (`light.uss`) and its own sheet. Plain layers carry literal layout inline; every bound value (`var(--token)`) is in a component class rule |
 | `PriceTag.uxml`, `PriceTag.uss` | the "Price Tag" component, used through `<Template>` / `<ui:Instance>`. Its text layers are named `text-0`, `text-1` for `AttributeOverrides` |
 | `tokens.uss` | every COLOR and FLOAT variable on `:root` |
 | `light.uss`, `dark.uss` | one `:root` sheet per variable mode |
@@ -26,6 +26,11 @@ Differences from a real import, all deliberate:
   one, `url("project://database/Assets/Figma/Cuvara-Shop/images/5e1a7c.png?fileID=2800000&guid=...&type=3#5e1a7c")`.
   An absolute path cannot be right for a sample, because the Package Manager imports it under
   a versioned folder; the validator would report it as `FIG040`.
+- No inline `style=` contains `var()`. Unity 6000.3 cannot clone a UXML that has one, and the
+  connector writes one for every token bound on a plain layer. The stand-in follows the rule a
+  designer must follow: the title, the description, the card and its art are component
+  instances, so their bound values live in class rules in `ShopCard.uss`, and `PriceTag`'s
+  texts use class rules in `PriceTag.uss`. See "Designer rule" in the sample README.
 - `.figma-manifest.json` has no `.meta`: Unity does not import dot-files.
 - This `README.md` would be a foreign file in a real import folder.
 

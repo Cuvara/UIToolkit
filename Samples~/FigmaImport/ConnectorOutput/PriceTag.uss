@@ -11,3 +11,15 @@
     border-bottom-left-radius: var(--radius-sm);
     border-bottom-right-radius: var(--radius-sm);
 }
+
+.shop-price-amount {
+    color: var(--text-primary);
+    font-size: 18px;
+    -unity-font-style: bold;
+}
+
+.shop-price-unit {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-left: 4px;
+}
