@@ -147,7 +147,9 @@ Runtime (`Cuvara.UIToolkit`):
   (`ThemeRootUssClassName`, `LocalThemeUssClassName`, `ScrimUssClassName`,
   `ScrimDimUssClassName`, `ConfirmDialog*UssClassName`, `Toast*UssClassName`),
   `DefaultStyleSheet`, `IsThemed(VisualElement)`.
-- `Cuvara.UIToolkit.Theme.ICuvaraThemeService`: `Apply`, `AddOverride`, `SetModeSheet`.
+- `Cuvara.UIToolkit.Theme.ICuvaraThemeService`: `Apply`, `Remove`, `AddOverride`,
+  `RegisterModeSheets`, `SetModeSheet`, `AttachScreen` (keeps an imported screen on the
+  current mode; see [THEMING.md](THEMING.md#imported-screens-and-their-mode-sheets)).
 - `Cuvara.UIToolkit.Theme.CuvaraThemeService`: two constructors, `BaseSheet`, `Overrides`,
   `ModeSheet`, and the interface members.
 - `RootUIDocument.Theme`.
@@ -156,8 +158,9 @@ Editor (`Cuvara.UIToolkit.Editor`):
 
 - `Cuvara.UIToolkit.FigmaCore`: `FigmaImportValidator`, `FigmaValidationOptions`,
   `FigmaDiagnostic`, `FigmaDiagnosticSeverity`, `FigmaDiagnostics`, `FigmaManifestReader`,
-  `FigmaManifestInfo`, `FigmaManifestScreen`, and the readers `FigmaJson`, `FigmaUss`,
-  `UssSheet`, `UssRule`, `UssDeclaration`.
+  `FigmaManifestInfo`, `FigmaManifestScreen`, `FigmaImportResultReader`,
+  `FigmaImportResultInfo`, `FigmaImportResultFact`, and the readers `FigmaJson`, `FigmaUss`,
+  `UssSheet`, `UssRule`, `UssDeclaration`, `UssImport`.
 - `ScreenSource`, `ScreenCreatorPlan`, `ScreenCreatorRequest`, `ScreenCreatorFile`, and on
   `ScreenCreatorTemplates`: `PH_ASSET_KEY`,
   `PH_UXML_PATH`, `SelectScriptTemplate(ScreenType, bool, ScreenSource)`,
@@ -166,6 +169,6 @@ Editor (`Cuvara.UIToolkit.Editor`):
 Editor, gated (`Cuvara.UIToolkit.Editor.Figma`): `FigmaProfile`, `FigmaTokenRole`,
 `FigmaTokenBridge`, `FigmaTokenBridgeResult`, `FigmaBridgeFreshness`, `FigmaMappingPreset`,
 `FigmaControlMapRow`, `FigmaMappingSelection`, `FigmaMappingPresetCommand`,
-`FigmaMappingAssetInfo`, `FigmaPaths`, `FigmaProfileValidator`, `FigmaProfileReport` and
-`FigmaDiagnosticsWindow`. This assembly
+`FigmaMappingAssetInfo`, `FigmaPaths`, `FigmaProfileValidator`, `FigmaProfileReport`,
+`FigmaImportResultStore`, `FigmaSavedImportResult` and `FigmaDiagnosticsWindow`. This assembly
 follows an experimental connector; treat its API as unstable.

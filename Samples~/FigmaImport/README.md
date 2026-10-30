@@ -21,7 +21,7 @@ connector.
 | `ShopFigmaProfile.asset` | the game | the `FigmaProfile` for this file: class prefix `shop`, 13 of the 20 theme roles mapped to Figma tokens, mode sheets, output folders |
 | `Theme/cuvara-theme-bridge.uss` | the game, generated | `--cuvara-*: var(--figma-token);` aliases, exactly as **Regenerate Token Bridges** writes them for the profile |
 | `ShopCardScreen.cs` | the game | Model, View interface, View and Presenter, started from **Create Screen > Existing UXML** |
-| `FigmaModeSwitcher.cs` | the game | switches light/dark for the document root and for open imported screens |
+| `FigmaModeSwitcher.cs` | the game | remembers light or dark and calls the theme service, which switches the document root and attached imported screens |
 | `FigmaImportSampleScope.cs` | the game | VContainer composition: package, loader, screen, theme sheets |
 | `FigmaImportSampleBootstrap.cs` | the game | attaches the theme sheets, adds the toolbar, opens ShopCard |
 | `FigmaImportSample.unity`, `FigmaImportSamplePanel.asset`, `FigmaImportSampleTheme.tss` | the game | scene with a `RootUIDocument` and the scope |
@@ -50,9 +50,10 @@ Figma file ──(plugin push)──► connector ──► Assets/Figma/<file>/
   **Theme Mode Sheet** on `RootUIDocument`.
 - **Modes.** `ICuvaraThemeService.SetModeSheet` re-themes the built-in UI. An imported screen
   links its own `tokens.uss` and `light.uss`, and those re-declare the tokens on the screen's
-  root, below the document root. `ICuvaraThemeService.AttachScreen` keeps such a screen on the
-  current mode; `FigmaModeSwitcher` registers the two mode sheets and wraps it. A presenter
-  opts in with `subs.Add(modes.Track(this.View.Root))`, so the screen is released when it closes.
+  root, below the document root. The theme service keeps such a screen on the current mode:
+  `FigmaModeSwitcher` declares both sheets with `RegisterModeSheets`, and a presenter attaches
+  its screen with `subs.Add(modes.Track(this.View.Root))`, which calls `AttachScreen`, so
+  tracking ends when the screen closes. See `Documentation~/THEMING.md` in the package.
 - **Elements.** The connector emits no `name` attributes except `text-<i>` inside templates.
   `ShopCardView` finds the item name, the description and the Buy button by their component
   classes (`shop-card-title`, `shop-card-description`, `shop-primary-button`), and the price by
@@ -84,8 +85,10 @@ Figma and push again; never edit the imported UXML.
 
 1. **Install.** Package Manager > **Add package by name** > `com.unity.ui.figma`, version
    `0.3.0-exp.1` (the tested version; it brings `com.unity.pipeline`). In Figma, install the
-   Community plugin **Unity UI Toolkit Connector** (Dev or Full seat). Connect it: connector
-   window > **Allow Browser Clients** > **Copy token**, paste it into the plugin.
+   Community plugin **Unity UI Toolkit Connector** (free, Dev or Full seat). Connect it:
+   **Edit > Project Settings > Pipeline > Editor** > **Allow Browser Clients**, restart the
+   Pipeline server, then **Window > UI Toolkit > Connector for Figma design** > **Copy token**
+   and paste it into the plugin's **Settings** tab within 60 seconds.
 2. **Choose a class prefix** for the game, for example `shop` or `rpg`. Connector classes then
    never collide with your USS or with the package's `cuvara-` classes.
 3. **Push one frame** from Figma. The connector creates `Assets/Figma/<file>/`.
@@ -112,9 +115,9 @@ Figma and push again; never edit the imported UXML.
    and bindings by hand, as `ShopCardScreen.cs` shows.
 9. **Attach the theme:** overrides `tokens.uss`, then `cuvara-theme-bridge.uss`; mode sheet
    `light.uss` (code as in `FigmaImportSampleBootstrap`, or the `RootUIDocument` fields).
-10. **Switch modes** with `ICuvaraThemeService.SetModeSheet`. Declare the mode sheets with
-    `RegisterModeSheets` and attach each open imported screen with `AttachScreen`, as
-    `FigmaModeSwitcher` does, so the screen's own linked mode sheet follows the switch.
+10. **Switch modes** with `ICuvaraThemeService.SetModeSheet`. Register every mode sheet once with
+    `RegisterModeSheets`, and attach each open imported screen with `AttachScreen` (disposed when
+    the screen closes), as `FigmaModeSwitcher` and `ShopCardPresenter` do.
 
 Never edit files in `Assets/Figma/<file>/`. The next push rewrites them, and the connector's
 write-back would see your edits as design changes.
@@ -139,7 +142,7 @@ write-back would see your edits as design changes.
 
 ## Missing real-world integration requirements
 
-Found while building this sample; none is solved by the package yet.
+Found while building this sample and still open.
 
 - **Tokens on plain layers break the screen.** The connector writes `var()` into inline styles
   for plain layers, which Unity 6000.3 cannot clone. Until the connector or Unity changes, the
@@ -155,6 +158,7 @@ Found while building this sample; none is solved by the package yet.
   reports each one as `FIG040`. Whether Unity resolves them through the `guid=` query is not
   verified. This is also why the stand-in uses a relative URL.
 - **No font mapping example.** Fonts resolve through the connector's font map; a game must ship
-  its fonts and map them, and the validator cannot yet report missing fonts.
+  its fonts and map them. Missing fonts are reported only for headless imports, from the result
+  `figma-import.py` saves (shown in the diagnostics window); the folder validator cannot see them.
 - **No headless verification in CI.** A game's CI can validate committed output, but not that the
   committed output matches the current Figma file.

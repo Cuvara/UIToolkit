@@ -16,7 +16,7 @@ All jobs are in `.github/workflows/ci.yml`. The Unity jobs run on 6000.3.9f1.
 
 | Job | What it proves | Gates? |
 |---|---|---|
-| `Validate package` | `package.json` shape, no unresolvable dependency declared, **the standalone gate**, the `cuvara-` USS prefix, CHANGELOG currency, `.meta` coverage, declared samples resolve their elements, asmdef names, and the Figma validator CLI on its fixtures (the good fixture exits 0; the bad one exits 1 with exactly 7 errors and 8 warnings, see [FIGMA-VALIDATION.md](FIGMA-VALIDATION.md#fixtures-and-ci)) | yes |
+| `Validate package` | `package.json` shape, no unresolvable dependency declared, **the standalone gate**, the `cuvara-` USS prefix, CHANGELOG currency, `.meta` coverage, declared samples resolve their elements, asmdef names, the Figma validator CLI on its fixtures (the good fixture exits 0; the bad one exits 1 with exactly 7 errors and 8 warnings, see [FIGMA-VALIDATION.md](FIGMA-VALIDATION.md#fixtures-and-ci)), and the Python self-tests: `Tools~/UxmlCodegenCli/cli_smoke.py` (CLI exit codes and JSON shape), `Tools~/FigmaImport/test_figma_import.py` (the headless helper against a mock Pipeline server) and `Tools~/FigmaLab/test_create_lab_project.py` (the lab project generator) | yes |
 | `Compile samples` | every sample `package.json` declares, copied under `Assets/` with `com.unity.entities`, compiles | yes |
 | `Unity Tests` | the package compiles and its EditMode and PlayMode tests pass in a project built from its own declarations, with `com.unity.entities` so the ECS tests run | yes |
 | `Figma connector tests` | the same project plus `com.unity.ui.figma` `0.3.0-exp.1`, so the gated `Cuvara.UIToolkit.Editor.Figma` assembly compiles and its tests run | yes |
@@ -25,7 +25,9 @@ All jobs are in `.github/workflows/ci.yml`. The Unity jobs run on 6000.3.9f1.
 
 Test counts are not written down here, because they change with every test added. Read them in
 the `Assert tests ran and passed` step summary of a run (`total=… passed=…`), or in the uploaded
-`test-results-*` artifacts.
+`test-results-*` artifacts. Which suite runs in which job, with or without the connector, how to
+run the Unity-free parts locally, and the release checklist:
+[RELEASE-TEST-MATRIX.md](RELEASE-TEST-MATRIX.md).
 
 ## The three checks that exist because something got through
 

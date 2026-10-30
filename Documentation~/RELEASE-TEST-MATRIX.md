@@ -20,7 +20,9 @@ the same change.
 | `Cuvara.UIToolkit.Ecs.Tests` | `Tests/Runtime/Ecs/` | PlayMode | `test` (entities is in its manifest) | no (gated on `com.unity.entities`) | 20 |
 | `UxmlCodegenCli` drift check | `Tools~/UxmlCodegenCli/` | none (.NET 10) | client repo codegen-drift check | no | n/a |
 | `UxmlCodegenCli validate` on fixtures | `Tools~/UxmlCodegenCli/Fixtures/figma/` | none (.NET 10) | `validate` | no | 2 runs |
-| `cli_smoke.py` (CLI exit codes and JSON shape) | `Tools~/UxmlCodegenCli/cli_smoke.py` | none (.NET 10 + Python 3) | not wired yet (see section 6) | no | 30 |
+| `cli_smoke.py` (CLI exit codes and JSON shape) | `Tools~/UxmlCodegenCli/cli_smoke.py` | none (.NET 10 + Python 3) | `validate` | no | 30 |
+| `test_figma_import.py` (headless helper against a mock Pipeline server) | `Tools~/FigmaImport/` | none (Python 3) | `validate` | no | 12 |
+| `test_create_lab_project.py` (real-import lab generator) | `Tools~/FigmaLab/` | none (Python 3) | `validate` | no | 5 |
 | Plain-C# NUnit harness (Unity-free sources) | `Editor/FigmaCore/`, `Editor/Codegen/Core/`, Unity-free `Editor/Figma/` and `Editor/ScreenCreator/` types | none (net8) | local only | no | 426 |
 
 Notes:
@@ -80,6 +82,9 @@ You do not need Unity for the Unity-free parts.
 dotnet build "Tools~/UxmlCodegenCli/UxmlCodegenCli.csproj" -c Release -o /tmp/uxmlcli
 dotnet /tmp/uxmlcli/UxmlCodegenCli.dll validate Tools~/UxmlCodegenCli/Fixtures/figma/good/Assets/Figma/Shop-Demo --prefix rpg --max-inline 5 --max-absolute 1
 python3 "Tools~/UxmlCodegenCli/cli_smoke.py" /tmp/uxmlcli/UxmlCodegenCli.dll
+# Python self-tests of the Figma helper and the lab generator (no Unity, no Figma)
+python3 "Tools~/FigmaImport/test_figma_import.py"
+python3 "Tools~/FigmaLab/test_create_lab_project.py"
 ```
 
 Building the CLI inside the package writes `Tools~/UxmlCodegenCli/obj/`. The repository has no
@@ -108,7 +113,7 @@ A release candidate is ready when every row is green on the release commit:
 | 4 | `figma-connector` job: executed > 0, gated (`figma=`) > 0, failed = 0 | `::notice::` line |
 | 5 | `samples` job compiles | CI job log |
 | 6 | `install-probe (documented)` compiles; `bare` is informational | CI job log |
-| 7 | `cli_smoke.py` reports `30/30 passed` | local run or CI step once wired |
+| 7 | `cli_smoke.py` reports `30/30 passed`; `test_figma_import.py` and `test_create_lab_project.py` report `OK` | `validate` job log |
 | 8 | Client project codegen drift check (`uitoolkit.codegen-cli/client-codegen-drift`) | Factory run-checks evidence |
 
 Record the counts from rows 3 and 4 in the release notes. A count that drops without a
@@ -116,7 +121,6 @@ matching test removal is a finding.
 
 ## 6. Known gaps
 
-- `cli_smoke.py` is not called by `ci.yml` yet. Until it is, run it by hand before a release.
 - Theme runtime tests and `FigmaIsolationTests` are compiled against the Unity 6000.3.9f1
   assemblies locally, but only CI executes them.
 - XML error line numbers come from the runtime's `XmlReader`. CI runs them under Unity's Mono, the

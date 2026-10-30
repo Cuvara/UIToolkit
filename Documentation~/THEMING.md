@@ -116,11 +116,18 @@ is therefore fixed by the next `Apply`.
 ```csharp
 public interface ICuvaraThemeService
 {
-    void Apply(VisualElement root);          // attach to a root; idempotent
-    void AddOverride(StyleSheet sheet);      // per-game sheets, in order; idempotent
-    void SetModeSheet(StyleSheet sheet);     // replace the mode sheet; null removes it
+    void Apply(VisualElement root);                        // attach to a root; idempotent
+    void Remove(VisualElement root);                       // stop syncing a root, detach its sheets
+    void AddOverride(StyleSheet sheet);                    // per-game sheets, in order; idempotent
+    void RegisterModeSheets(params StyleSheet[] sheets);   // every mode sheet the game uses
+    void SetModeSheet(StyleSheet sheet);                   // switch the mode; null removes it from roots
+    IDisposable AttachScreen(VisualElement screenRoot);    // keep an imported screen on the current mode
 }
 ```
+
+`Remove(root)` detaches the base, override and mode sheets this service attached, removes
+`cuvara-theme-root`, and stops syncing that root. A root that was never applied is ignored.
+Call it when a themed root outlives its use, so the service does not keep it.
 
 On every applied root the order is: other host sheets, then the base theme, then the overrides
 in the order added, then the mode sheet. At equal specificity a later sheet wins. So an override
@@ -190,6 +197,35 @@ theme.SetModeSheet(null);        // back to tokens and overrides only
 A Figma mode sheet redefines the Figma tokens, for example `--background-primary`. Because the
 bridge aliases `--cuvara-*` to those tokens, the built-in UI follows the mode with no extra rule.
 The mode sheet is always last, so it wins over `tokens.uss` at equal specificity.
+
+### Imported screens and their mode sheets
+
+The connector links the mode a screen resolved to inside the screen itself
+(`<Style src="tokens.uss"/>`, `<Style src="light.uss"/>`). Those sheets sit on the screen's
+elements, below the document root, so their token values win over the root's mode sheet inside
+the screen. Switching the root alone would leave an open imported screen in the old mode.
+
+The service handles this; no game code re-links sheets:
+
+```csharp
+theme.RegisterModeSheets(lightSheet, darkSheet);    // once: every mode sheet the game uses
+var attachment = theme.AttachScreen(view.Root);      // per imported screen, while it is open
+// ...
+attachment.Dispose();                                // when the screen closes
+```
+
+- `AttachScreen` replaces, inside the screen, every registered mode sheet with the current mode
+  sheet, in the same position, now and on every later `SetModeSheet`. Elements that link no
+  mode sheet are left alone.
+- A sheet passed to `SetModeSheet` is registered automatically. Register the others up front, so
+  a screen that links `light.uss` is recognised while the current mode is `dark.uss`.
+- With **no current mode** (none set yet, or after `SetModeSheet(null)`), the service has no
+  opinion: attached screens keep the mode sheet they link at that moment. So
+  `SetModeSheet(null)` clears the mode from the roots but leaves screens on their last mode.
+- Dispose the attachment when the screen closes (in a presenter, `subs.Add(theme.AttachScreen(View.Root))`).
+  Disposing stops tracking; it does not change the screen's sheets.
+
+The Figma Import sample (`Samples~/FigmaImport`, `FigmaModeSwitcher.cs`) shows the pattern.
 
 ## Relation to the Figma connector's token naming (audit §2)
 
