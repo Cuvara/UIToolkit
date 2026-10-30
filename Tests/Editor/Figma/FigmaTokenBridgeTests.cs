@@ -184,6 +184,20 @@ namespace Cuvara.UIToolkit.Editor.Figma.Tests
         }
 
         [Test]
+        public void ParseDeclaredTokens_IgnoresDeclarationTextInsideQuotedStrings()
+        {
+            const string uss =
+                ":root {\n"
+                + "    --real: 4px;\n"
+                + "    content: \"--fake: 1px;\";\n"
+                + "    --label: '--also-fake: 2px';\n"
+                + "}\n";
+
+            var tokens = FigmaTokenBridge.ParseDeclaredTokens(uss);
+            Assert.That(tokens, Is.EquivalentTo(new[] { "--real", "--label" }));
+        }
+
+        [Test]
         public void ParseDeclaredTokens_OfNothing_IsEmpty()
         {
             Assert.That(FigmaTokenBridge.ParseDeclaredTokens(null), Is.Empty);

@@ -113,10 +113,6 @@ namespace Cuvara.UIToolkit.Editor.Figma
         private static readonly Regex CuvaraTokenPattern = new Regex("^--cuvara-[a-z0-9]+(?:-[a-z0-9]+)*$", RegexOptions.CultureInvariant);
         private static readonly Regex TokenPattern       = new Regex("^--[A-Za-z0-9_-]+$", RegexOptions.CultureInvariant);
 
-        // A custom-property declaration: "--name:" not preceded by a name character, so the
-        // "--x" inside "var(--x)" (followed by ")" not ":") is not counted as a declaration.
-        private static readonly Regex DeclarationPattern = new Regex(@"(?<![A-Za-z0-9_-])(--[A-Za-z0-9_-]+)\s*:", RegexOptions.CultureInvariant);
-
         /// <summary>The default role list with no Figma token mapped yet.</summary>
         public static List<FigmaTokenRole> CreateDefaultRoles()
         {
@@ -139,9 +135,16 @@ namespace Cuvara.UIToolkit.Editor.Figma
             var tokens = new HashSet<string>(StringComparer.Ordinal);
             if (string.IsNullOrEmpty(ussText)) return tokens;
 
-            // Comments may hold "--x:" text that declares nothing.
-            var withoutComments = Regex.Replace(ussText, @"/\*.*?\*/", string.Empty, RegexOptions.Singleline);
-            foreach (Match match in DeclarationPattern.Matches(withoutComments)) tokens.Add(match.Groups[1].Value);
+            // Only real declarations count: the USS parser drops comments and keeps quoted
+            // strings inside values, so "--x:" in a comment or in content: "--x:" declares nothing.
+            foreach (var rule in FigmaUss.Parse(ussText).Rules)
+            {
+                foreach (var declaration in rule.Declarations)
+                {
+                    if (TokenPattern.IsMatch(declaration.Property)) tokens.Add(declaration.Property);
+                }
+            }
+
             return tokens;
         }
 

@@ -115,6 +115,33 @@ namespace Cuvara.UIToolkit.Editor.Figma
             return diagnostics;
         }
 
+        /// <summary>
+        /// Resolves a file named relative to a folder, such as a profile mode sheet relative to
+        /// the connector folder. Refuses rooted paths (<c>/x</c>, <c>\\server</c>, <c>C:</c>), any
+        /// <c>..</c> segment and anything that would not end up strictly inside
+        /// <paramref name="folder"/>, so a profile can never make a tool read a file outside it.
+        /// </summary>
+        /// <returns>True with the normalized project path, or false with an empty path.</returns>
+        public static bool TryResolveInside(string folder, string relativePath, out string path)
+        {
+            path = string.Empty;
+            var root = Normalize(folder);
+            if (root.Length == 0 || string.IsNullOrWhiteSpace(relativePath)) return false;
+
+            var relative = relativePath.Trim().Replace('\\', '/');
+            if (relative.StartsWith("/", StringComparison.Ordinal) || relative.IndexOf(':') >= 0) return false;
+            foreach (var segment in relative.Split('/'))
+            {
+                if (segment == "..") return false;
+            }
+
+            var candidate = Normalize(root + "/" + relative);
+            if (candidate.Length <= root.Length || !IsSameOrInside(candidate, root)) return false;
+
+            path = candidate;
+            return true;
+        }
+
         /// <summary>A connector folder must be a project folder under <c>Assets/</c>.</summary>
         public static IReadOnlyList<FigmaDiagnostic> ValidateConnectorFolder(string connectorFolder, string file)
         {

@@ -1,5 +1,6 @@
 namespace Cuvara.UIToolkit.Editor.Figma
 {
+    using System;
     using System.Collections.Generic;
     using Cuvara.UIToolkit.FigmaCore;
     using UnityEditor;
@@ -23,6 +24,8 @@ namespace Cuvara.UIToolkit.Editor.Figma
         private const int MaxDiagnosticsPerProfile = 50;
 
         private ScrollView content;
+
+        private DateTime resultsWrittenUtc;
 
         [MenuItem("Window/Cuvara/Figma Diagnostics")]
         public static void Open()
@@ -78,6 +81,13 @@ namespace Cuvara.UIToolkit.Editor.Figma
             this.Rebuild();
         }
 
+        // The helper saves its result after the import's own refresh has run, and nothing imports
+        // Library/: pick up a newer saved result when the window gets focus.
+        private void OnFocus()
+        {
+            if (FigmaImportResultStore.NewestWriteUtc(FigmaImportResultReader.DefaultFolder) != this.resultsWrittenUtc) this.Rebuild();
+        }
+
         private void Rebuild()
         {
             if (this.content == null) return;
@@ -87,13 +97,17 @@ namespace Cuvara.UIToolkit.Editor.Figma
             this.AddMapping();
 
             var reports = FigmaProfileValidator.ValidateAll(log: false);
+            this.resultsWrittenUtc = FigmaImportResultStore.NewestWriteUtc(FigmaImportResultReader.DefaultFolder);
+            var saved = FigmaImportResultStore.ReadAll(FigmaImportResultReader.DefaultFolder);
+            var matched = new HashSet<FigmaSavedImportResult>();
             this.AddHeader($"Profiles ({reports.Count})");
             if (reports.Count == 0)
             {
                 this.AddLine("No FigmaProfile asset. Create one with Assets > Create > Cuvara > UI Toolkit > Figma Profile.");
             }
 
-            foreach (var report in reports) this.AddProfile(report);
+            foreach (var report in reports) this.AddProfile(report, saved, matched);
+            this.AddUnmatchedResults(saved, matched);
         }
 
         private void AddVersions()
@@ -127,7 +141,7 @@ namespace Cuvara.UIToolkit.Editor.Figma
             foreach (var diagnostic in diagnostics) this.AddDiagnostic(diagnostic);
         }
 
-        private void AddProfile(FigmaProfileReport report)
+        private void AddProfile(FigmaProfileReport report, List<FigmaSavedImportResult> saved, HashSet<FigmaSavedImportResult> matched)
         {
             var profile = report.Profile;
             if (profile == null) return;
@@ -176,6 +190,43 @@ namespace Cuvara.UIToolkit.Editor.Figma
                 }
 
                 this.AddDiagnostic(diagnostic);
+            }
+
+            this.AddImportResult(profile, report, saved, matched);
+        }
+
+        // The notes of the last headless import (Tools~/FigmaImport saves them): what the connector
+        // dropped or degraded. The import folder alone cannot tell, so this is shown only when saved.
+        private void AddImportResult(FigmaProfile profile, FigmaProfileReport report, List<FigmaSavedImportResult> saved, HashSet<FigmaSavedImportResult> matched)
+        {
+            var latest = FigmaImportResultStore.FindLatest(saved, profile.ConnectorFolder, report.Manifest?.FileName);
+            if (latest == null)
+            {
+                this.AddLine($"Last import result: none saved in {FigmaImportResultReader.DefaultFolder} (figma-import.py saves one per import).");
+                return;
+            }
+
+            matched.Add(latest);
+            var stale = FigmaImportResultStore.IsOlderThanManifest(latest, profile.ConnectorFolder);
+            this.AddLine($"Last import result: {latest.Path}{(stale ? " (older than the current import: a later push from Figma replaced it, so these notes may be out of date)" : string.Empty)}");
+            foreach (var diagnostic in latest.Diagnostics)
+            {
+                if (diagnostic == null) continue;
+                if (diagnostic.Code == FigmaImportResultReader.CodeSummary) this.AddLine("    " + diagnostic.Message);
+                else this.AddDiagnostic(diagnostic);
+            }
+        }
+
+        private void AddUnmatchedResults(List<FigmaSavedImportResult> saved, HashSet<FigmaSavedImportResult> matched)
+        {
+            var unmatched = saved.FindAll(entry => !matched.Contains(entry));
+            if (unmatched.Count == 0) return;
+
+            this.AddHeader($"Saved import results not matched to a profile ({unmatched.Count})");
+            foreach (var entry in unmatched)
+            {
+                var folder = entry.Info == null ? "unreadable" : (entry.Info.Folder.Length > 0 ? "folder " + entry.Info.Folder : "no folder");
+                this.AddLine($"    {entry.Path} ({folder}, {(entry.Info == null ? "-" : entry.Info.Ok ? "ok" : "failed " + entry.Info.Code)})");
             }
         }
 
