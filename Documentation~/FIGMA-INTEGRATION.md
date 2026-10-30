@@ -12,6 +12,11 @@ The background, and the gap list the features below come from, is the connector 
 does not work, see [TROUBLESHOOTING-FIGMA.md](TROUBLESHOOTING-FIGMA.md). Upgrading from 0.7.2:
 [MIGRATION-0.8.md](MIGRATION-0.8.md).
 
+A complete, runnable example is the **Figma Import** sample (`Samples~/FigmaImport`, import it
+from the Package Manager): an imported screen with a View and Presenter, the theme fed by Figma
+tokens through a bridge, and a light/dark switch. It runs without the connector. A real import
+in a throwaway project, step by step: [FIGMA-REAL-IMPORT.md](FIGMA-REAL-IMPORT.md).
+
 ## Requirements
 
 | Item | Version |
@@ -71,7 +76,7 @@ have games or files; every tool finds all of them.
 | Class prefix | The USS class prefix this game expects, e.g. `rpg` (classes like `.rpg-card`). |
 | Token roles | Cuvara theme variable to Figma token, e.g. `--cuvara-color-primary` to `--brand-primary`. |
 | Bridge output folder | Game-owned folder for `cuvara-theme-bridge.uss`. Must be under `Assets/` and outside every connector folder. |
-| Mode sheets | Mode sheets the connector writes for this file, e.g. `light.uss`, `dark.uss`. |
+| Mode sheets | Mode sheets the connector writes for this file, e.g. `light.uss`, `dark.uss`. Relative paths inside the connector folder; a rooted path or one with `..` is an error and is never read. |
 | Screens namespace / folder | Where screens created from this file's UXML go. Game-owned, outside the connector folder. |
 
 A new profile starts with the default theme roles and no Figma token mapped.
@@ -155,6 +160,12 @@ Attach the bridge sheet after the connector's `tokens.uss` (and the active mode 
 the Cuvara theme sheet, on the root your screens live under. The theme variables, their
 defaults and how the host attaches theme sheets are described in [THEMING.md](THEMING.md).
 
+Imported screens link their own mode sheet (`<Style src="light.uss"/>`), which wins over the
+root's mode sheet inside the screen. To switch modes on open imported screens too, declare the
+mode sheets once with `ICuvaraThemeService.RegisterModeSheets(light, dark)` and attach each
+imported screen with `AttachScreen(screenRoot)` for its lifetime; `SetModeSheet` then reaches
+them. See [THEMING.md](THEMING.md#imported-screens-and-their-mode-sheets).
+
 ## Diagnostics
 
 **Window > Cuvara > Figma Diagnostics** shows:
@@ -164,7 +175,21 @@ defaults and how the host attaches theme sheets are described in [THEMING.md](TH
 - the active mapping asset, its class prefix and row count, and unresolved mapped control types;
 - per profile: connector folder and manifest found, the imported screens, the expected class
   prefix, validator results (`FigmaImportValidator`), token coverage (verified / mapped / roles)
-  and bridge freshness (missing, stale, fresh).
+  and bridge freshness (missing, stale, fresh);
+- per profile, the **last import result**: the newest result the headless helper
+  (`Tools~/FigmaImport/figma-import.py`) saved in `Library/CuvaraFigma/` for that connector
+  folder (or, for a request refused before it had a folder, for that Figma file). It shows the
+  summary and the connector's notes as diagnostics: the import failed, missing fonts
+  (`cuvara.import.fact.MissingFonts`), images that never arrived
+  (`cuvara.import.fact.MissingImages`, `cuvara.import.fact.ImagePending`), dropped features, USS
+  errors, plugin input warnings. When the manifest is newer than the saved result, the window
+  says the notes may be out of date: a later push from Figma replaced that import;
+- saved results that match no profile, in their own section.
+
+Only headless imports leave a saved result. A push made from the Figma plug-in directly has
+none; for those, the connector window's **Last import** section is the only record of its
+notes. The window re-reads saved results when it gets focus. Codes and file format:
+[FIGMA-REAL-IMPORT.md](FIGMA-REAL-IMPORT.md#import-result-diagnostics).
 
 Buttons: **Apply mapping preset**, **Regenerate token bridges**, **Re-validate**, and per
 profile **Apply preset with this prefix** and **Regenerate bridge**.
@@ -218,7 +243,7 @@ own documentation and source (audit §2), and its troubleshooting page.
 | Drop shadow on vectors | **dropped** | `filter: drop-shadow()` needs Unity 6000.6 |
 | Background blur | **dropped** | `backdrop-filter` needs Unity 6000.6.0a6 |
 | Blend modes | **dropped** | USS has none; flatten the layer in Figma |
-| Text, fonts | supported | through the mapping asset's font map, then by file name; a missing font falls back to the default |
+| Text, fonts | supported | through the mapping asset's font map, then by file name; a missing font falls back to the default (`cuvara.import.fact.MissingFonts` in a saved headless result) |
 | Components | supported | a template `.uxml`/`.uss` per used component; instances carry a class plus an inline delta |
 | Component to control (Button, Toggle, Slider, ...) | supported | by name, by plug-in tag, or by a mapping row (the Cuvara preset adds `SafeArea`) |
 | Variants | partial | variant styles only for components with a single text layer |
@@ -244,6 +269,12 @@ own documentation and source (audit §2), and its troubleshooting page.
   (`style="..."`); instances carry a class plus an inline delta. Theme variables reach only the
   values that were bound to Figma variables (`var(--token)`); unbound values stay literals. The
   validator reports inline-style and unbound-literal counts.
+- **Moving an import folder breaks image URLs.** The connector writes absolute
+  `project://database/Assets/...?guid=...` image URLs. After you move `Assets/Figma/<file>/`, each
+  one still names the old path, and the validator, which checks the path only, reports every one
+  as `FIG040`. The connector's documentation says the images still load and Unity may warn
+  until you push that file again; this package has not verified the `guid=` fallback. Push the
+  file again after a move so the connector rewrites the URLs.
 - **Images are PNG.** The plugin rasterises vectors and image fills; they import as plain
   textures, not sprites and not vector graphics.
 - **Features of later Unity versions.** `gap` (6000.7.0a4), grid layouts (6000.7.0b3), USS

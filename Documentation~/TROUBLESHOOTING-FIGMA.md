@@ -13,7 +13,8 @@ push that did not produce what you expected.
 Where diagnostics appear:
 
 - **Window > Cuvara > Figma Diagnostics**: per profile, the errors and warnings of the import
-  validator (`FIG0xx`) and of the profile checks (`cuvara.*`).
+  validator (`FIG0xx`), of the profile checks (`cuvara.profile.*`, `cuvara.bridge.*`), and of
+  the last saved headless import result (`cuvara.import.*`).
 - **Console**: one summary line per profile after each push, and one line per diagnostic after
   **Tools > Cuvara > Figma > Apply Cuvara Mapping Preset** or **Regenerate Token Bridges**. The
   format is `<context>: [<code>] <message> (<file>)`. Problems are logged as warnings, never as
@@ -101,7 +102,8 @@ from the design, so fix them in Figma and push again: the next push rewrites eve
 | `cuvara.profile.manifest-missing` | warning | No `.figma-manifest.json` in the folder: nothing was imported here, or the folder was unlinked. |
 | `cuvara.profile.manifest-unreadable` | error | Restore the manifest from version control. |
 | `cuvara.profile.validator-failed` | error | The validator threw. Report it with the message; the window keeps working. |
-| `cuvara.profile.mode-sheet-missing` | warning | A **Mode sheets** entry names a file the connector did not write. Use the file names in the connector folder, such as `dark.uss`. |
+| `cuvara.profile.mode-sheet-invalid` | error | A **Mode sheets** entry is rooted (`/x`, `C:/x`, `\server`), contains `..`, or does not resolve strictly inside the connector folder. It is never read. Use a path relative to the connector folder, such as `dark.uss`. |
+| `cuvara.profile.mode-sheet-missing` | warning | A **Mode sheets** entry names a file the connector did not write. Use the file names in the connector folder, such as `dark.uss`. Reported only when the connector folder exists. |
 | `cuvara.profile.screens-folder-invalid` | warning | **Screens folder** must be under `Assets/` and outside every connector folder. |
 
 ## The token bridge refuses its folder
@@ -147,6 +149,28 @@ A row whose Figma name already matches (case and punctuation ignored, so `Safe A
 `safe-area` and `SafeArea` are one name) is never changed. If a user row maps `SafeArea` to
 another control, that row wins.
 
+## The saved import result reports a problem (`cuvara.import.*`)
+
+`Tools~/FigmaImport/figma-import.py` saves each headless import's result in
+`Library/CuvaraFigma/last-import-<file>.json`, and the diagnostics window shows the newest one
+per profile. Pushes made from the Figma plug-in directly save nothing; for those, use the
+connector window's **Last import** section.
+
+| Code | Severity | What to do |
+|---|---|---|
+| `cuvara.import.summary` | info | File, time, state, files written and removed. No action. |
+| `cuvara.import.failed` | error | The import failed; the message carries the connector's code, error and the plug-in's reason. An `expired` request means the plug-in was not open and connected on that file. |
+| `cuvara.import.schema-mismatch` | error | The Figma plug-in and the connector speak different wire schemas. Update the connector package or reload the plug-in. |
+| `cuvara.import.uss-errors` | error | Unity reported errors in generated USS. Read the Console; the files are listed as `cuvara.import.file-not-imported`. |
+| `cuvara.import.file-not-imported` | error | The connector wrote this file but Unity did not import it cleanly. Push again; report it if it repeats. |
+| `cuvara.import.input-warning` | warning | The plug-in reported a problem with the selection or link. |
+| `cuvara.import.fact.<Kind>` | as the connector says | One connector finding, for example `MissingFonts`, `MissingImages`, `ImagePending`, `DroppedGap`, `DroppedShadows`. See the sections below and [FIGMA-REAL-IMPORT.md](FIGMA-REAL-IMPORT.md#unsupported-constructs). |
+| `cuvara.import.note` | warning | A connector note, shown only when the result has no facts. |
+| `cuvara.import.result-unreadable` | error | The saved file is not JSON or has no `ok` field. Delete it and import again. |
+
+If the window says the result is **older than the current import**, a later push from Figma
+replaced that import, and the notes may be out of date. Run the helper again for fresh notes.
+
 ## Text uses the wrong font
 
 The connector resolves a Figma font family through the mapping asset's **Font map**, then by
@@ -155,9 +179,13 @@ a project font whose name contains the family. When neither matches, it drops
 **Last import** section lists the unmatched families; a headless import reports them in
 `result.notes`.
 
+For a headless import, the diagnostics window shows the same finding from the saved result as
+`cuvara.import.fact.MissingFonts`, with the family names. A push made from the plug-in saves no
+result; check the connector window then. The folder validator (`FIG0xx`) cannot see fonts: the
+manifest carries no font notes.
+
 Fix: add the family to **Font map** (**Edit > Project Settings > UI Toolkit > Connector for
-Figma design**), then push again. The Cuvara validator does not check fonts yet: the manifest
-carries no font notes.
+Figma design**), then push again.
 
 ## Images look stretched, blurry or wrong
 
@@ -171,6 +199,13 @@ The plug-in rasterises vectors and image fills to PNG. They import as plain text
 - **No 9-slice.** The PNG is a texture with no sprite borders, so a panel designed to stretch
   around its corners scales as a whole. Use a separate sprite asset with borders in a
   game-owned USS file.
+- **Blank images.** A saved headless result reports layers whose image never reached Unity as
+  `cuvara.import.fact.MissingImages`, and image or vector fills Figma could not export as
+  `cuvara.import.fact.ImagePending`. The validator reports a missing file behind a `url()` as
+  `FIG040`. Push again; if a fill still cannot export, flatten it to an image in Figma.
+- **After moving the import folder.** The connector's image URLs are absolute
+  `project://database/Assets/...` paths, so every one is reported as `FIG040` after a move. Push
+  the file again so the connector rewrites them.
 - **Blurry or stale.** The PNG is rendered at export time. A changed token colour does not
   update an already exported vector; push the frame again.
 - **Icons all one colour.** Each icon component exports as one PNG that every instance shares,
@@ -196,6 +231,11 @@ the default colours although the bridge sheet is attached.
   [THEMING.md](THEMING.md#overriding-from-a-game-the-bridge-sheet).
 - **Stale bridge.** The diagnostics window shows bridge freshness. **Regenerate bridge** after
   you change the profile.
+- **An imported screen stays in the old mode.** The screen links its own mode sheet. Register
+  the mode sheets with `ICuvaraThemeService.RegisterModeSheets` and attach the screen with
+  `AttachScreen(screenRoot)` while it is open; see
+  [THEMING.md](THEMING.md#imported-screens-and-their-mode-sheets). After `SetModeSheet(null)`
+  attached screens keep their last mode by design.
 - **Two variables, one name.** On a name collision the connector keeps the first variable and
   adds a note. Rename one in Figma.
 

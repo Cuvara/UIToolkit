@@ -16,8 +16,8 @@ On top of that core it ships:
   ([UXML-CODEGEN.md](Documentation~/UXML-CODEGEN.md));
 - hybrid runtime data binding and an optional DOTS/ECS presentation adapter;
 - an optional integration with Unity's **UI Toolkit Connector for Figma**: per-game profiles,
-  a token bridge into the theme, a component mapping preset, a diagnostics window, an import
-  validator and screen scaffolding over imported UXML
+  a token bridge into the theme, a component mapping preset, a diagnostics window (including
+  the notes of headless imports), an import validator and screen scaffolding over imported UXML
   ([FIGMA-INTEGRATION.md](Documentation~/FIGMA-INTEGRATION.md)).
 
 ## Documentation
@@ -31,9 +31,23 @@ On top of that core it ships:
 | [FIGMA-INTEGRATION.md](Documentation~/FIGMA-INTEGRATION.md) | connector setup, profiles, token bridge, mapping preset, diagnostics, supported Figma features |
 | [FIGMA-VALIDATION.md](Documentation~/FIGMA-VALIDATION.md) | validator rules (`FIG0xx`), the `validate` CLI verb, the headless import helper |
 | [TROUBLESHOOTING-FIGMA.md](Documentation~/TROUBLESHOOTING-FIGMA.md) | connection problems and what to do about each diagnostic code |
+| [FIGMA-REAL-IMPORT.md](Documentation~/FIGMA-REAL-IMPORT.md) | connector compatibility record, saved import results, unsupported constructs, the real-import lab |
 | [FIGMA-CONNECTOR-AUDIT.md](Documentation~/FIGMA-CONNECTOR-AUDIT.md) | why the integration is built the way it is, and its status |
 | [MIGRATION-0.8.md](Documentation~/MIGRATION-0.8.md) | upgrading from 0.7.2 |
 | [CI.md](Documentation~/CI.md) | what CI checks, and what it cannot |
+| [RELEASE-TEST-MATRIX.md](Documentation~/RELEASE-TEST-MATRIX.md) | every test suite, where it runs, and the release checklist |
+
+## Samples
+
+Import them from **Window > Package Manager** > Cuvara UI Toolkit > **Samples**.
+
+| Sample | Shows |
+|---|---|
+| Screen Flow (scene) | push, pop, replace, pop-to-root, a dimming modal and Back, with a live lifecycle HUD |
+| Notification Popup | the smallest complete screen, with no host framework |
+| ECS HUD | a HUD driven from ECS through the adapter, and the reference hybrid data-binding screen (needs `com.unity.entities`) |
+| Loading Flow | a two-scene loading-to-main flow using every navigator feature |
+| Figma Import | a game adopting the Figma connector: an imported screen with View and Presenter, the theme fed by Figma tokens, light/dark switching; runs without the connector |
 
 ## It does not depend on GameFoundation
 
@@ -196,11 +210,13 @@ public sealed class AddressablesVisualTreeAssetLoader : IVisualTreeAssetLoader
 | `Editor/FigmaCore/` | Unity-free validator for `com.unity.ui.figma` import folders — see [FIGMA-VALIDATION.md](Documentation~/FIGMA-VALIDATION.md) |
 | `Editor/Figma/` | optional Figma connector integration (profiles, token bridge, mapping preset, diagnostics); compiles only with `com.unity.ui.figma` — see [FIGMA-INTEGRATION.md](Documentation~/FIGMA-INTEGRATION.md) |
 | `Tools~/UxmlCodegenCli/` | plain-`dotnet` CLI: drift check over the committed generated bindings, and `validate` for Figma import folders |
-| `Tools~/FigmaImport/` | `figma-import.py`: headless Figma frame import through the connector's Pipeline commands |
+| `Tools~/FigmaImport/` | `figma-import.py`: headless Figma frame import through the connector's Pipeline commands; saves the import result for the diagnostics window. `test_figma_import.py` is its self-test |
+| `Tools~/FigmaLab/` | `create-lab-project.py`: a throwaway Unity project for a real Figma import ([FIGMA-REAL-IMPORT.md](Documentation~/FIGMA-REAL-IMPORT.md)); `test_create_lab_project.py` is its self-test |
 | `Samples~/ScreenFlow/` | a playable scene exercising push, pop, replace, modal and Back |
 | `Samples~/NotificationPopup/` | the smallest complete screen, host-free |
 | `Samples~/EcsHud/` | a HUD driven from ECS, through the adapter — and the reference hybrid data-binding screen |
 | `Samples~/LoadingFlow/` | a two-scene loading-to-main flow using every navigator feature |
+| `Samples~/FigmaImport/` | a Figma connector import (stand-in files) driving a screen, the theme bridge and light/dark modes; see its `README.md` |
 | `Tests/Editor/` | EditMode tests: codegen, Screen Creator, the Figma validator core; `Tests/Editor/Figma/` runs only with the connector installed |
 | `Tests/Runtime/` | runtime tests: views, flow, theme, collections and (with `com.unity.entities`) ECS — most need a live panel |
 
