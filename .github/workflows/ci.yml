@@ -396,6 +396,141 @@ jobs:
           name: test-results-${{ matrix.unityVersion }}
           path: artifacts/
 
+  # ---------------------------------------------------------------------------
+  # The optional Figma integration (Editor/Figma, Tests/Editor/Figma).
+  #
+  # Cuvara.UIToolkit.Editor.Figma and its tests are gated on com.unity.ui.figma through
+  # versionDefines + defineConstraints, exactly like the ECS assembly is gated on entities.
+  # The test job above does not install the connector, so there the gated assemblies are
+  # correctly left out, and the integration would never be compiled by anything. This job
+  # is the same bootstrap with the connector added at the version the integration was
+  # written against.
+  #
+  # Two gates, not one. The usual one: zero executed tests or any failure fails the job.
+  # And a second one specific to a gated assembly: if no Cuvara.UIToolkit.Editor.Figma.Tests
+  # case ran, the define did not take effect (connector missing, renamed, or a version
+  # outside the expression) and the job fails instead of reporting the ungated suites green.
+  # ---------------------------------------------------------------------------
+  figma-connector:
+    name: Figma connector tests (${{ matrix.unityVersion }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        unityVersion:
+          - 6000.3.9f1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: package
+
+      # Identical to the test job's bootstrap (see the notes there) plus com.unity.ui.figma.
+      # The connector brings com.unity.pipeline and com.unity.nuget.newtonsoft-json with it.
+      - name: Bootstrap test project with the Figma connector
+        run: |
+          mkdir -p Assets ProjectSettings Packages
+
+          cat > Packages/manifest.json << 'JSON'
+          {
+            "dependencies": {
+              "com.cuvara.uitoolkit": "file:../package",
+              "com.unity.test-framework": "1.6.0",
+              "com.unity.inputsystem": "1.18.0",
+              "com.unity.entities": "1.4.8",
+              "com.unity.ui.figma": "0.3.0-exp.1"
+            },
+            "scopedRegistries": [
+              {
+                "name": "OpenUPM",
+                "url": "https://package.openupm.com",
+                "scopes": ["com.cysharp", "jp.hadashikick"]
+              }
+            ],
+            "testables": ["com.cuvara.uitoolkit"]
+          }
+          JSON
+
+          python3 -c "import json;json.load(open('Packages/manifest.json'))" \
+            || { echo "::error::the bootstrap wrote invalid JSON — the job is broken, not the package"; exit 1; }
+
+          cat > ProjectSettings/ProjectVersion.txt << 'TXT'
+          m_EditorVersion: ${{ matrix.unityVersion }}
+          TXT
+
+          cat > ProjectSettings/ProjectSettings.asset << 'YAML'
+          %YAML 1.1
+          %TAG !u! tag:unity3d.com,2011:
+          --- !u!129 &1
+          PlayerSettings:
+            companyName: Cuvara
+            productName: UIToolkitFigmaTest
+            activeInputHandler: 1
+          YAML
+
+      - name: Run tests
+        uses: game-ci/unity-test-runner@v4.3.1
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          unityVersion: ${{ matrix.unityVersion }}
+          testMode: EditMode
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          checkName: Figma connector test results
+
+      - name: Assert tests ran and passed, including the gated Figma suite
+        if: always()
+        run: |
+          python3 - << 'PY'
+          import glob, sys, xml.etree.ElementTree as ET
+
+          GATED = 'Cuvara.UIToolkit.Editor.Figma.Tests.'
+
+          files = sorted(glob.glob('artifacts/**/*.xml', recursive=True))
+          if not files:
+              sys.exit('::error::No test result XML was produced. The runner reported '
+                       'nothing, so nothing was verified.')
+
+          total = passed = failed = errors = inconclusive = skipped = gated = 0
+          for path in files:
+              try:
+                  run = ET.parse(path).getroot()
+              except ET.ParseError as exc:
+                  sys.exit(f'::error::{path} is not parseable XML: {exc}')
+              if run.tag != 'test-run':
+                  continue
+              g = lambda k: int(run.get(k) or 0)
+              total += g('total'); passed += g('passed'); failed += g('failed')
+              errors += g('errors'); inconclusive += g('inconclusive'); skipped += g('skipped')
+              gated += sum(1 for case in run.iter('test-case')
+                           if (case.get('fullname') or '').startswith(GATED)
+                           and case.get('result') not in ('Skipped', 'Inconclusive'))
+
+          print(f'total={total} passed={passed} failed={failed} errors={errors} '
+                f'inconclusive={inconclusive} skipped={skipped} figma={gated}')
+
+          if total == 0:
+              sys.exit('::error::Zero tests were executed. A green run that ran nothing is '
+                       'not a passing run — check that the package resolves and that its '
+                       'test assembly loads.')
+          if gated == 0:
+              sys.exit('::error::No Cuvara.UIToolkit.Editor.Figma.Tests case executed. The '
+                       'CUVARA_UITOOLKIT_FIGMA define did not take effect, so the Figma '
+                       'integration was not compiled or tested — check that com.unity.ui.figma '
+                       'resolved at a version the versionDefines expression accepts.')
+          if failed or errors:
+              sys.exit(f'::error::{failed} failed and {errors} errored out of {total}.')
+          print(f'::notice::{passed}/{total} tests passed, {gated} of them in the Figma suite.')
+          PY
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-figma-${{ matrix.unityVersion }}
+          path: artifacts/
+
   # Does the package install on its own declarations alone? The test job above supplies the
   # OpenUPM scoped registry, so it cannot answer this by itself — a registry is exactly the
   # kind of thing whose absence hides an install defect.

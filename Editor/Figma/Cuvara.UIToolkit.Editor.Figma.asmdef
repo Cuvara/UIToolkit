@@ -1,0 +1,27 @@
+{
+  "name": "Cuvara.UIToolkit.Editor.Figma",
+  "rootNamespace": "Cuvara.UIToolkit.Editor.Figma",
+  "references": [
+    "Cuvara.UIToolkit",
+    "Cuvara.UIToolkit.Editor"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [
+    "CUVARA_UITOOLKIT_FIGMA"
+  ],
+  "versionDefines": [
+    {
+      "name": "com.unity.ui.figma",
+      "expression": "0.3.0-exp.1",
+      "define": "CUVARA_UITOOLKIT_FIGMA"
+    }
+  ],
+  "noEngineReferences": false
+}
