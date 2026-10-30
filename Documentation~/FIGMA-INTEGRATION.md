@@ -8,7 +8,21 @@ over the imported UXML. It never converts Figma data itself, and it never edits 
 connector wrote.
 
 The background, and the gap list the features below come from, is the connector audit
-(gaps G2, G3, G6, G7, G9).
+([FIGMA-CONNECTOR-AUDIT.md](FIGMA-CONNECTOR-AUDIT.md), gaps G2, G3, G6, G7, G9). When something
+does not work, see [TROUBLESHOOTING-FIGMA.md](TROUBLESHOOTING-FIGMA.md). Upgrading from 0.7.2:
+[MIGRATION-0.8.md](MIGRATION-0.8.md).
+
+## Requirements
+
+| Item | Version |
+|---|---|
+| Unity | 6000.3 or later (the package's `unity` field; CI runs 6000.3.9f1) |
+| `com.unity.ui.figma` (UI Toolkit Connector for Figma design) | `0.3.0-exp.1`, the tested version. It is experimental. |
+| `com.unity.pipeline` | `0.9.1-exp.1`, installed by the connector |
+| Figma | the Community plug-in **Unity UI Toolkit Connector**; a free, Dev or Full seat |
+
+The connector is optional. Without it, everything in this package except the
+`Cuvara.UIToolkit.Editor.Figma` assembly works as before.
 
 ## What lives where
 
@@ -28,16 +42,23 @@ connector's files and its mapping asset only.
 
 ## Setup
 
-1. Install the connector: Package Manager > **Add package by name** > `com.unity.ui.figma`,
-   version `0.3.0-exp.1` (the tested version). It brings `com.unity.pipeline`.
-2. In Figma, install the Community plugin **Unity UI Toolkit Connector** (Dev or Full seat).
-3. In Unity, open the connector window, enable **Allow Browser Clients**, and use **Copy
-   token** to paste the token into the Figma plugin. The plugin then pushes frames into the
-   project.
-4. Push a frame once. The connector creates `Assets/Figma/<file>/` with the screen UXML/USS,
-   `tokens.uss`, mode sheets, `images/` and the hidden `.figma-manifest.json`.
-5. Create a profile: **Assets > Create > Cuvara > UI Toolkit > Figma Profile** (next section).
-6. Open **Window > Cuvara > Figma Diagnostics** and fix what it reports.
+1. Install the connector: **Window > Package Manager** > **+** > **Add package by name**, name
+   `com.unity.ui.figma`, version `0.3.0-exp.1` (the tested version). It brings
+   `com.unity.pipeline`. The Cuvara Figma menus appear after the next compile.
+2. In Figma, run the Community plug-in **Unity UI Toolkit Connector**.
+3. In Unity, go to **Edit > Project Settings > Pipeline > Editor**, enable **Allow Browser
+   Clients**, and restart the Pipeline server.
+4. Open **Window > UI Toolkit > Connector for Figma design** and select **Copy token**. Within
+   60 seconds (Unity then clears the clipboard), paste it into the plug-in's **Settings** tab,
+   **Pipeline token** field, and select **Connect to Unity**. The token carries the port. Copy
+   it again after an Editor restart, or when the plug-in cannot reach Unity after a recompile.
+5. Optional: in **Edit > Project Settings > UI Toolkit > Connector for Figma design**, select
+   **Create mapping** so a mapping asset exists for the preset (see Mapping preset).
+6. In Figma, select a frame and **Push selection**. The connector creates
+   `Assets/Figma/<file>/` with the screen UXML/USS, `tokens.uss`, mode sheets, `images/` and
+   the hidden `.figma-manifest.json`. Commit the manifest with the folder.
+7. Create a profile: **Assets > Create > Cuvara > UI Toolkit > Figma Profile** (next section).
+8. Open **Window > Cuvara > Figma Diagnostics** and fix what it reports.
 
 ## One profile per game or Figma file
 
@@ -92,7 +113,8 @@ connector's component mapping, so a Figma component named `SafeArea` (or `Safe A
 - It edits the **active** mapping asset, found as the connector finds it: the asset selected in
   `ProjectSettings/FigmaMappingState.asset`, otherwise the first `FigmaImportSettings` asset by
   path. If the mapping was cleared on purpose (`-`), the preset does nothing and says so. If no
-  mapping asset exists, create one on the connector's Project Settings page first.
+  mapping asset exists, create one first: **Edit > Project Settings > UI Toolkit > Connector
+  for Figma design** > **Create mapping**.
 - It is **additive and idempotent**: it adds only rows whose Figma name no row matches yet. It
   never removes or changes your rows, and a second run adds nothing.
 - It sets the connector's class prefix only when that prefix is **empty**, from the only
@@ -173,6 +195,44 @@ The generated view queries no element: a Figma import names none (see the limita
 Choose a game-owned output folder; the wizard refuses a folder inside a connector import
 folder, for either source.
 
+## Supported and unsupported Figma features
+
+What survives an import with connector `0.3.0-exp.1` on Unity 6000.3. Sources: the connector's
+own documentation and source (audit §2), and its troubleshooting page.
+
+| Figma feature | On Unity 6000.3 | Notes |
+|---|---|---|
+| Frames | supported | one `<Screen>.uxml` + `.uss` per pushed frame |
+| Auto layout (direction, padding, alignment, hug/fill) | supported | becomes flexbox |
+| Auto layout gap | **dropped** | USS `gap` needs Unity 6000.7.0a4. Set margins in a game-owned sheet. |
+| Negative auto layout spacing | **dropped** | USS has no negative `gap`. Use absolute positioning or negative margins. |
+| Frames without auto layout, `ABSOLUTE` children | supported | `position: absolute; left; top` (`FIG032` counts them) |
+| Grid layout | **degraded** | needs Unity 6000.7.0b3; on 6000.3 cells keep fixed sizes and positions |
+| Solid fills, strokes, corner radius, opacity | supported | inline style, or a class on component instances |
+| Gradients | **degraded** | USS gradients need Unity 6000.7.0b5; on 6000.3 they import as images |
+| Image fills | supported as PNG | plain textures, not sprites; Fill = `scale-and-crop`, Fit = `scale-to-fit`, Tile = repeat |
+| Vectors and icons | supported as PNG | rasterised by the plug-in; no vector graphics, no per-instance colour overrides |
+| Drop shadow on text | supported | `text-shadow` |
+| Drop shadow on frames and shapes | **dropped** | USS has no `box-shadow` |
+| Layer blur | supported | `filter: blur()` |
+| Drop shadow on vectors | **dropped** | `filter: drop-shadow()` needs Unity 6000.6 |
+| Background blur | **dropped** | `backdrop-filter` needs Unity 6000.6.0a6 |
+| Blend modes | **dropped** | USS has none; flatten the layer in Figma |
+| Text, fonts | supported | through the mapping asset's font map, then by file name; a missing font falls back to the default |
+| Components | supported | a template `.uxml`/`.uss` per used component; instances carry a class plus an inline delta |
+| Component to control (Button, Toggle, Slider, ...) | supported | by name, by plug-in tag, or by a mapping row (the Cuvara preset adds `SafeArea`) |
+| Variants | partial | variant styles only for components with a single text layer |
+| Component properties: TEXT, BOOLEAN | supported | bindable to UXML attributes through mapping rows |
+| Component properties: instance swap | **dropped** | not passed to mapping rows |
+| Variables: COLOR, FLOAT | supported | `tokens.uss` and one `<mode>.uss` per mode; bound properties become `var(--token)` |
+| Variables: STRING, BOOLEAN | **dropped** | never written to a token sheet |
+| Multiple variable modes | supported | needs a paid Figma plan (Free has one mode per collection) |
+| Unbound properties | literal | hard-coded values; the theme cannot reach them (`FIG020`) |
+| Layer names | **not emitted** | no `name` attributes; only `text-<i>` inside templates |
+| Element styling | inline | non-component elements carry their whole style in `style="..."` (`FIG030`) |
+| USS class prefix | one per project | a single setting in the active mapping asset |
+| Write-back to Figma | partial | style, layout, interaction-state and token edits; no structural edits |
+
 ## Limitations
 
 - **No element names from Figma (gap G4, deferred).** The connector never turns layer names into
@@ -186,9 +246,11 @@ folder, for either source.
   validator reports inline-style and unbound-literal counts.
 - **Images are PNG.** The plugin rasterises vectors and image fills; they import as plain
   textures, not sprites and not vector graphics.
-- **Unity 6000.7-only features.** `gap`, `filter` (6000.6), grid layouts and USS gradients need
-  Unity 6000.6/6000.7. On 6000.3, grids keep fixed cell sizes and positions, and gradients
-  import as images.
+- **Features of later Unity versions.** `gap` (6000.7.0a4), grid layouts (6000.7.0b3), USS
+  gradients (6000.7.0b5), `backdrop-filter` (6000.6.0a6) and `filter: drop-shadow()` (6000.6)
+  are not imported on 6000.3. Grids keep fixed cell sizes and positions, and gradients import as
+  images. `filter: blur()` (layer blur) works on 6000.3. Full list: Supported and unsupported
+  Figma features, above.
 - **Experimental connector.** `0.x` releases may change the manifest or the mapping asset. The
   diagnostics window shows when the installed version is not the tested one; the preset and the
   validator report renamed fields as errors instead of failing.

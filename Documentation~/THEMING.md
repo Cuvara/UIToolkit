@@ -5,6 +5,9 @@ It is styled by `cuvara-*` USS classes. Those classes read semantic `--cuvara-*`
 properties. A game re-skins the built-in UI by setting the properties. It does not restyle
 the classes, and it does not touch C#.
 
+Upgrading from 0.7.2, including what `applyTheme` (on by default) does to existing scenes:
+[MIGRATION-0.8.md](MIGRATION-0.8.md).
+
 This is gap G1 of the Figma connector audit. It has no Figma dependency: the runtime knows only
 USS and `StyleSheet` assets. The Figma side (token bridge, G2) produces a sheet that plugs into
 this contract.
@@ -16,8 +19,9 @@ sources were `ConfirmDialog.cs`, `ToastService.cs` (including `GetColor`) and th
 `ScreenNavigator` scrim. A host that does nothing gets the same visuals.
 
 Colour channels are written as 0-255 numbers derived from the old 0-1 floats, not rounded
-(`0.15 * 255 = 38.25`). The Editor test `UssColourDefault_EqualsPreThemeInlineValue` reads the
-`.uss` text and checks every colour against the old float.
+(`0.15 * 255 = 38.25`). The test `UssColourDefault_EqualsPreThemeInlineValue`
+(`Tests/Runtime/Theme/CuvaraThemeTests.cs`) reads the `.uss` text and checks every colour
+against the old float.
 
 ## Tokens
 
@@ -80,7 +84,8 @@ A theme must not be able to make a modal stop covering the screen.
 ## How the sheet reaches the elements
 
 **The mechanism.** The default sheet lives in a package `Resources` folder.
-`CuvaraTheme.DefaultStyleSheet` loads it once with `Resources.Load`. When a component builds its
+`CuvaraTheme.DefaultStyleSheet` loads it once with `Resources.Load<StyleSheet>("CuvaraTheme")`,
+so do not name a `StyleSheet` of your own `CuvaraTheme` in a `Resources` folder. When a component builds its
 top element (dialog overlay, toast container, dimmed scrim), it checks the parent chain:
 
 1. If an ancestor carries `cuvara-theme-root` or `cuvara-theme-local`, the component inherits

@@ -16,7 +16,7 @@ converter, binding system or code generator.
 | Connector `unity` field | `6000.3` | client is on 6000.3.9f1: compatible |
 | Dependencies | `com.unity.pipeline 0.9.1-exp.1`, `com.unity.nuget.newtonsoft-json 3.0.2`, `jsonserialize`, `imageconversion`, `uielements` | none conflict with this package |
 | Assembly | `Unity.UIToolkit.Figma.Editor`, Editor-only, `autoReferenced: false` | |
-| Unity-gated features | `gap` 6000.7.0a4, `filter` 6000.6.0a6, grid 6000.7.0b3, gradients 6000.7.0b5 | on 6000.3: grids keep fixed cell size and position, gradients import as images |
+| Unity-gated features | `gap` 6000.7.0a4, `backdrop-filter` 6000.6.0a6, `filter: drop-shadow()` 6000.6, grid 6000.7.0b3, gradients 6000.7.0b5 | on 6000.3: grids keep fixed cell size and position, gradients import as images; `filter: blur()` works (corrected 2026-10-30 from `FigmaToUss.cs`, which gates only `drop-shadow()`, not `blur()`) |
 | Figma side | plugin "Unity UI Toolkit Connector" (Community), free, Dev or Full seat | Dev seat is read-only import |
 | Multiple modes per collection | Figma paid plans (incl. Education) | Free plan gets one mode only |
 
@@ -193,7 +193,12 @@ G9 **ScreenCreator source option.** The wizard can create View, Presenter and Mo
 | Runtime path of `<ui:Instance>` children (TemplateContainer level) | must be confirmed against a real import before G4 is released; a test fixture records the expected tree |
 | 0.x minor bumps rewrite generated files | regenerate bindings after an upgrade; drift check catches stale `.g.cs` |
 
-## 8. Implementation status (2026-10-30, branch `feat/uitoolkit/figma-connector`)
+## 8. Implementation status (2026-10-30, branch `feat/uitoolkit/figma-connector`, target release 0.8.0)
+
+User documentation for the built parts: [FIGMA-INTEGRATION.md](FIGMA-INTEGRATION.md) (setup,
+profiles, bridge, preset, diagnostics, supported features),
+[FIGMA-VALIDATION.md](FIGMA-VALIDATION.md) (G5, G8), [THEMING.md](THEMING.md) (G1),
+[TROUBLESHOOTING-FIGMA.md](TROUBLESHOOTING-FIGMA.md) and [MIGRATION-0.8.md](MIGRATION-0.8.md).
 
 | Gap | Status | Where |
 |---|---|---|

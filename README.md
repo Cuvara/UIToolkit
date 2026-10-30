@@ -6,6 +6,35 @@ and a back-navigation event source — and it depends on no UI framework of its 
 
 It owns its contracts. A host binds it to whatever screen flow it already has.
 
+On top of that core it ships:
+
+- a screen flow (`ScreenNavigator`, presenters, transitions, `ConfirmDialog`, `ToastService`)
+  with VContainer registration;
+- a theme contract: the built-in UI reads `--cuvara-*` USS variables a game can override
+  ([THEMING.md](Documentation~/THEMING.md));
+- `Require<T>` typed queries and a UXML-to-C# binding codegen
+  ([UXML-CODEGEN.md](Documentation~/UXML-CODEGEN.md));
+- hybrid runtime data binding and an optional DOTS/ECS presentation adapter;
+- an optional integration with Unity's **UI Toolkit Connector for Figma**: per-game profiles,
+  a token bridge into the theme, a component mapping preset, a diagnostics window, an import
+  validator and screen scaffolding over imported UXML
+  ([FIGMA-INTEGRATION.md](Documentation~/FIGMA-INTEGRATION.md)).
+
+## Documentation
+
+| Page | Read it for |
+|---|---|
+| [THEMING.md](Documentation~/THEMING.md) | the `--cuvara-*` tokens, classes, theme service and override pattern |
+| [UXML-CODEGEN.md](Documentation~/UXML-CODEGEN.md) | `Require<T>`, typed UXML bindings, the drift check |
+| [HYBRID-DATA-BINDING.md](Documentation~/HYBRID-DATA-BINDING.md) | runtime data binding behind the view interfaces |
+| [LIFECYCLE-PLAN.md](Documentation~/LIFECYCLE-PLAN.md) | screen lifecycle design |
+| [FIGMA-INTEGRATION.md](Documentation~/FIGMA-INTEGRATION.md) | connector setup, profiles, token bridge, mapping preset, diagnostics, supported Figma features |
+| [FIGMA-VALIDATION.md](Documentation~/FIGMA-VALIDATION.md) | validator rules (`FIG0xx`), the `validate` CLI verb, the headless import helper |
+| [TROUBLESHOOTING-FIGMA.md](Documentation~/TROUBLESHOOTING-FIGMA.md) | connection problems and what to do about each diagnostic code |
+| [FIGMA-CONNECTOR-AUDIT.md](Documentation~/FIGMA-CONNECTOR-AUDIT.md) | why the integration is built the way it is, and its status |
+| [MIGRATION-0.8.md](Documentation~/MIGRATION-0.8.md) | upgrading from 0.7.2 |
+| [CI.md](Documentation~/CI.md) | what CI checks, and what it cannot |
+
 ## It does not depend on GameFoundation
 
 This is the design constraint, not an accident of packaging.
@@ -34,7 +63,16 @@ compiled or tested on its own. This one can — see [Documentation~/CI.md](Docum
 where CI bootstraps a throwaway project from this package's own declarations and runs the
 suite. That is only possible because nothing here needs a private submodule to resolve.
 
+## Requirements
+
+- Unity **6000.3** or later.
+- UniTask `2.5.10` and VContainer `1.16.9`, from OpenUPM (declared dependencies; see below).
+- Optional: `com.unity.entities` `1.4.8` for `Runtime/Ecs/`.
+- Optional: `com.unity.ui.figma` `0.3.0-exp.1` (tested) for the Figma integration.
+
 ## Install
+
+Add the package to `Packages/manifest.json` by git URL, pinned to a release tag:
 
 ```jsonc
 {
@@ -42,11 +80,16 @@ suite. That is only possible because nothing here needs a private submodule to r
     { "name": "OpenUPM", "url": "https://package.openupm.com", "scopes": ["com.cysharp", "jp.hadashikick"] }
   ],
   "dependencies": {
-    "com.cuvara.uitoolkit": "https://github.com/Cuvara/UIToolkit.git#v0.1.0"
+    "com.cuvara.uitoolkit": "https://github.com/Cuvara/UIToolkit.git#v0.8.0"
   },
   "testables": ["com.cuvara.uitoolkit"]
 }
 ```
+
+`testables` is optional; it runs the package's tests in your project. Releases are the
+`v*` tags of this repository, and `CHANGELOG.md` lists what each one changed. The release
+workflow also publishes an npm copy to GitHub Packages as `@cuvara/uitoolkit`; Unity projects
+install from the git URL above.
 
 The OpenUPM scoped registry covers UniTask and VContainer. **A UPM package cannot declare a
 scoped registry of its own**, so this belongs to the consuming project and there is no way to
@@ -58,6 +101,25 @@ whatever you already use.
 behind a versionDefine so the package would install without it. That gating is
 gone — this project standardises on VContainer for all dependency injection, so "no container"
 is not a supported configuration and the branch existed without anything exercising it.
+
+### Optional: the Figma connector
+
+Only needed if your game imports UI from Figma. The connector is Unity's experimental
+**UI Toolkit Connector for Figma design**; this package never imports or converts Figma data
+itself.
+
+1. **Window > Package Manager** > **+** > **Add package by name**: `com.unity.ui.figma`, version
+   `0.3.0-exp.1` (the tested version). It installs `com.unity.pipeline` too. This package's gated
+   assembly `Cuvara.UIToolkit.Editor.Figma` then compiles and the **Window > Cuvara > Figma
+   Diagnostics** and **Tools > Cuvara > Figma** menus appear.
+2. In Figma, run the Community plug-in **Unity UI Toolkit Connector** (free, Dev or Full seat).
+3. **Edit > Project Settings > Pipeline > Editor**: enable **Allow Browser Clients**, then
+   restart the Pipeline server.
+4. **Window > UI Toolkit > Connector for Figma design** > **Copy token**, and paste it into the
+   plug-in's **Settings** tab within 60 seconds. Copy it again after every Editor restart.
+
+Then create a Figma profile and follow [FIGMA-INTEGRATION.md](Documentation~/FIGMA-INTEGRATION.md#setup).
+If something does not connect: [TROUBLESHOOTING-FIGMA.md](Documentation~/TROUBLESHOOTING-FIGMA.md).
 
 ### A screen's lifetime is a child scope
 
@@ -121,19 +183,26 @@ public sealed class AddressablesVisualTreeAssetLoader : IVisualTreeAssetLoader
 | `Runtime/View/` | `BaseUIToolkitView`, `UIToolkitViewFactory`, `VisualElementViewLayer` |
 | `Runtime/ViewModel/` | `BindableViewModel` — the notifying base for hybrid data-binding ViewModels |
 | `Runtime/Managers/` | `RootUIDocument` and the default three-layer `RootUIDocument.uxml` |
+| `Runtime/Flow/` | `ScreenNavigator`, screen presenters and options, transitions, `ConfirmDialog`, `ToastService` |
+| `Runtime/VContainer/` | `RegisterUIToolkit()` and screen-flow registration (`Cuvara.UIToolkit.VContainer`) |
+| `Runtime/TestSupport/` | fakes and assertions for testing presenters (`Cuvara.UIToolkit.TestSupport`) |
 | `Runtime/Collections/` | list, grid and multi-template adapters + item view/presenter bases |
 | `Runtime/Utilities/` | `SafeAreaElement`, `SafeAreaCalculator`, `PanelScaleRatio`, `Require<T>` |
 | `Runtime/Input/` | back-navigation event source |
 | `Runtime/Theme/` | `CuvaraTheme.uss` (`--cuvara-*` theme contract), `ICuvaraThemeService` — see [THEMING.md](Documentation~/THEMING.md) |
 | `Runtime/Ecs/` | DOTS/ECS presentation adapter — optional, needs `com.unity.entities` |
 | `Editor/Codegen/` | UXML → typed view codegen (menu + auto-regen); `Core/` is Unity-free |
+| `Editor/ScreenCreator/` | **Assets > Cuvara > Create Screen**: view, presenter, model and test skeleton, for a new UXML or an existing (imported) one |
 | `Editor/FigmaCore/` | Unity-free validator for `com.unity.ui.figma` import folders — see [FIGMA-VALIDATION.md](Documentation~/FIGMA-VALIDATION.md) |
 | `Editor/Figma/` | optional Figma connector integration (profiles, token bridge, mapping preset, diagnostics); compiles only with `com.unity.ui.figma` — see [FIGMA-INTEGRATION.md](Documentation~/FIGMA-INTEGRATION.md) |
 | `Tools~/UxmlCodegenCli/` | plain-`dotnet` CLI: drift check over the committed generated bindings, and `validate` for Figma import folders |
 | `Tools~/FigmaImport/` | `figma-import.py`: headless Figma frame import through the connector's Pipeline commands |
+| `Samples~/ScreenFlow/` | a playable scene exercising push, pop, replace, modal and Back |
 | `Samples~/NotificationPopup/` | the smallest complete screen, host-free |
 | `Samples~/EcsHud/` | a HUD driven from ECS, through the adapter — and the reference hybrid data-binding screen |
-| `Tests/` | PlayMode tests (113) — they need a live panel, which EditMode has not got |
+| `Samples~/LoadingFlow/` | a two-scene loading-to-main flow using every navigator feature |
+| `Tests/Editor/` | EditMode tests: codegen, Screen Creator, the Figma validator core; `Tests/Editor/Figma/` runs only with the connector installed |
+| `Tests/Runtime/` | runtime tests: views, flow, theme, collections and (with `com.unity.entities`) ECS — most need a live panel |
 
 ## Theming
 
@@ -154,7 +223,8 @@ On top of it sits a codegen: enroll a UXML once via
 **Assets/Cuvara/Generate UXML Bindings** and a `partial` class with one typed property per
 named element plus an `AssignQueries(root)` appears in `Generated/` beside it, regenerated
 automatically on every save (opt-in — only enrolled files are ever touched) and
-byte-checked against its UXML in CI by `Tools~/UxmlCodegenCli`. Your half of the partial
+byte-checked against its UXML by the `Tools~/UxmlCodegenCli` drift check, which you run in
+your own CI. Your half of the partial
 picks the base type and calls `AssignQueries` in the constructor. The full workflow — a
 `ConfirmPopup` end to end, the naming/namespace conventions, the failure rules —
 is in [Documentation~/UXML-CODEGEN.md](Documentation~/UXML-CODEGEN.md).
