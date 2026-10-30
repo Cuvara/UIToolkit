@@ -192,7 +192,7 @@ G9 **ScreenCreator source option.** The wizard can create View, Presenter and Mo
 | Pipeline port/token protocol change | the helper script is isolated in `Tools~`, never shipped to runtime |
 | Runtime path of `<ui:Instance>` children (TemplateContainer level) | must be confirmed against a real import before G4 is released; a test fixture records the expected tree |
 | 0.x minor bumps rewrite generated files | regenerate bindings after an upgrade; drift check catches stale `.g.cs` |
-| Inline `var(--token)` on non-component layers (0.3.0-exp.1 writes bound properties of plain layers inline). UI Toolkit 6000.3 cannot clone it: `NullReferenceException` in `StyleVariableResolver.ResolveVariable` (verified 2026-10-30 on 6000.3.9f1) | designer rule: bind variables on components only (values land in class rules); the inline-var validator rule fails the import folder before a screen is opened; documented in FIGMA-INTEGRATION.md and TROUBLESHOOTING-FIGMA.md |
+| Inline `var(--token)` on non-component layers (0.3.0-exp.1 writes bound properties of plain layers inline). UI Toolkit 6000.3 cannot clone it: `NullReferenceException` in `StyleVariableResolver.ResolveVariable` (verified 2026-10-30 on 6000.3.9f1) | designer rule: bind variables on components only (values land in class rules); the inline-var validator rule (`FIG023`) fails the import folder before a screen is opened; documented in FIGMA-INTEGRATION.md and TROUBLESHOOTING-FIGMA.md |
 
 ## 8. Implementation status (2026-10-30, branch `feat/uitoolkit/figma-connector`, target release 0.8.0)
 

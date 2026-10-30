@@ -85,6 +85,7 @@ from the design, so fix them in Figma and push again: the next push rewrites eve
 | `FIG020` literal colour | The Figma property is not bound to a variable, so it imports as a literal. Bind it to a colour variable in Figma, **on a component** (a binding on a plain layer becomes inline `var()`, which breaks the screen; see [the `StyleVariableResolver` section](#creating-a-view-throws-nullreferenceexception-in-stylevariableresolverresolvevariable)). Turn the rule off with `--no-token-colors` if your project accepts literals. |
 | `FIG021` summary | Count of `FIG020`. No action. |
 | `FIG022` undefined token | See [Tokens do not resolve](#tokens-do-not-resolve). |
+| `FIG023` `var()` in an inline style | The screen cannot be cloned. Bind the variable on a component in Figma, or unbind it, then push again. See the `NullReferenceException` entry below. |
 | `FIG030` too many inline styles | Above `--max-inline`. Non-component elements carry their whole style inline; turn repeated parts into Figma components so they get a class. |
 | `FIG031` layout summary | Counts per `.uxml`. No action. |
 | `FIG032` too many absolute elements | Above `--max-absolute`. Frames without auto layout, and `ABSOLUTE` children, import as `position: absolute`. Use auto layout in Figma. |
@@ -224,7 +225,7 @@ layer that way: plain layers carry their whole style inline.
 
 **Fix.**
 
-1. Run the validator on the import folder. The inline-var validator rule reports every
+1. Run the validator on the import folder. The inline-var validator rule (`FIG023`) reports every
    `style` attribute with `var(...)`, with file and line, as an error.
 2. In Figma, move the bound styling onto a **component**: make the layer a component, or bind
    the variable on the component master. A component's values land in class rules in its

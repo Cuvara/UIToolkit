@@ -49,6 +49,7 @@ Codes are stable. A new rule gets a new code, and a code is never reused.
 | `FIG020` | Warning | a literal colour (`#hex`, `rgb()`, `rgba()`, a CSS named colour) in a screen or template `.uss`, or in an inline `style=` in `.uxml`; one per occurrence; only when token colours are required |
 | `FIG021` | Info | summary: the number of `FIG020` findings |
 | `FIG022` | Error | `var(--x)` with no fallback, where no `.uss` in the folder defines `--x` and the manifest lists no token `--x` |
+| `FIG023` | Error | `var()` inside an inline `style=` in a `.uxml` (screens and templates). UI Toolkit does not support variables in inline styles: `CloneTree` throws `NullReferenceException` in `StyleVariableResolver.ResolveVariable` (verified on 6000.3.9f1). The connector writes bound properties of plain (non-component) layers inline; bind the variable on a component instead, or unbind it |
 | `FIG030` | Warning | a `.uxml` has more inline-styled elements than the limit |
 | `FIG031` | Info | summary per `.uxml`: inline-styled and absolute-positioned element counts |
 | `FIG032` | Warning | a `.uxml` has more `position: absolute` elements than the limit |

@@ -262,7 +262,7 @@ own documentation and source (audit §2), and its troubleshooting page.
 | Component properties: instance swap | **dropped** | not passed to mapping rows |
 | Variables: COLOR, FLOAT | supported | `tokens.uss` and one `<mode>.uss` per mode; bound properties become `var(--token)` |
 | Variables bound on a component | supported | `var(--token)` in the component's class rules |
-| Variables bound on a plain frame or layer (not a component) | **breaks the screen** | written as inline `var(--token)`, which UI Toolkit 6000.3 cannot clone (`NullReferenceException` in `StyleVariableResolver.ResolveVariable`); the inline-var validator rule reports it |
+| Variables bound on a plain frame or layer (not a component) | **breaks the screen** | written as inline `var(--token)`, which UI Toolkit 6000.3 cannot clone (`NullReferenceException` in `StyleVariableResolver.ResolveVariable`); the inline-var validator rule (`FIG023`) reports it |
 | Variables: STRING, BOOLEAN | **dropped** | never written to a token sheet |
 | Multiple variable modes | supported | needs a paid Figma plan (Free has one mode per collection) |
 | Unbound properties | literal | hard-coded values; the theme cannot reach them (`FIG020`) |
