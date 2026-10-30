@@ -11,7 +11,8 @@ This page covers two tools for output of Unity's **UI Toolkit Connector for Figm
 Neither tool imports, converts or edits anything. The connector does the import and owns the
 import folder. These tools only read the folder and call the connector's own commands. Why
 the integration works through files and commands (the connector has no public API) is in
-`FIGMA-CONNECTOR-AUDIT.md` (gaps G5 and G8).
+`FIGMA-CONNECTOR-AUDIT.md` (gaps G5 and G8). What to do about each diagnostic code:
+[TROUBLESHOOTING-FIGMA.md](TROUBLESHOOTING-FIGMA.md).
 
 ## The validator
 
