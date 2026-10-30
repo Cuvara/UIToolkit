@@ -77,9 +77,46 @@ namespace Cuvara.UIToolkit.Editor.Figma.Tests
         public void ValidateConnectorFolder_RequiresAFolderUnderAssets()
         {
             Assert.That(FigmaPaths.ValidateConnectorFolder("Assets/Figma/Game", "p"), Is.Empty);
-            Assert.That(FigmaPaths.ValidateConnectorFolder("Assets", "p"), Has.Count.EqualTo(1));
-            Assert.That(FigmaPaths.ValidateConnectorFolder("", "p"), Has.Count.EqualTo(1));
-            Assert.That(FigmaPaths.ValidateConnectorFolder("Library/Figma", "p"), Has.Count.EqualTo(1));
+            Assert.That(FigmaPaths.ValidateConnectorFolder("Assets", "p").Count, Is.EqualTo(1));
+            Assert.That(FigmaPaths.ValidateConnectorFolder("", "p").Count, Is.EqualTo(1));
+            Assert.That(FigmaPaths.ValidateConnectorFolder("Library/Figma", "p").Count, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TryResolveInside_AcceptsRelativeFilesInsideTheFolder()
+        {
+            Assert.That(FigmaPaths.TryResolveInside("Assets/Figma/Game", "dark.uss", out var path), Is.True);
+            Assert.That(path, Is.EqualTo("Assets/Figma/Game/dark.uss"));
+            Assert.That(FigmaPaths.TryResolveInside("Assets/Figma/Game", @" modes\light.uss ", out path), Is.True);
+            Assert.That(path, Is.EqualTo("Assets/Figma/Game/modes/light.uss"));
+            Assert.That(FigmaPaths.TryResolveInside("Assets/Figma/Game", "./modes/./light.uss", out path), Is.True);
+            Assert.That(path, Is.EqualTo("Assets/Figma/Game/modes/light.uss"));
+        }
+
+        [TestCase("../../Assets/Other.uss")]
+        [TestCase("../Game2/tokens.uss")]
+        [TestCase("modes/../../Other.uss")]
+        [TestCase("modes/..")]
+        [TestCase(@"..\Other.uss")]
+        [TestCase("/Assets/Other.uss")]
+        [TestCase(@"\\server\share\Other.uss")]
+        [TestCase("C:/Other.uss")]
+        [TestCase("C:Other.uss")]
+        [TestCase(".")]
+        [TestCase("")]
+        [TestCase("   ")]
+        [TestCase(null)]
+        public void TryResolveInside_RefusesPathsThatLeaveTheFolder(string relative)
+        {
+            Assert.That(FigmaPaths.TryResolveInside("Assets/Figma/Game", relative, out var path), Is.False);
+            Assert.That(path, Is.Empty);
+        }
+
+        [Test]
+        public void TryResolveInside_NeedsAFolder()
+        {
+            Assert.That(FigmaPaths.TryResolveInside("", "dark.uss", out _), Is.False);
+            Assert.That(FigmaPaths.TryResolveInside(null, "dark.uss", out _), Is.False);
         }
     }
 }

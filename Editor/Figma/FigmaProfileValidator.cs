@@ -57,6 +57,7 @@ namespace Cuvara.UIToolkit.Editor.Figma
         public const string CodeManifestUnreadable     = "cuvara.profile.manifest-unreadable";
         public const string CodeValidatorFailed        = "cuvara.profile.validator-failed";
         public const string CodeModeSheetMissing       = "cuvara.profile.mode-sheet-missing";
+        public const string CodeModeSheetInvalid       = "cuvara.profile.mode-sheet-invalid";
         public const string CodeScreensFolderInvalid   = "cuvara.profile.screens-folder-invalid";
 
         /// <summary>Validates one profile. <paramref name="allProfiles"/> supplies every connector folder the bridge must stay out of.</summary>
@@ -81,8 +82,9 @@ namespace Cuvara.UIToolkit.Editor.Figma
             {
                 ReadManifest(report, folder);
                 RunImportValidator(report, profile, folder);
-                CheckModeSheets(report, profile, folder, profilePath);
             }
+
+            CheckModeSheets(report, profile, folder, profilePath);
 
             BuildBridge(report, profile, allProfiles, profilePath);
             CheckScreensFolder(report, profile, allProfiles, profilePath);
@@ -137,8 +139,8 @@ namespace Cuvara.UIToolkit.Editor.Figma
             sheets.AddRange(profile.ModeSheets);
             foreach (var sheet in sheets)
             {
-                if (string.IsNullOrWhiteSpace(sheet)) continue;
-                var path = profile.ConnectorFolder + "/" + FigmaPaths.Normalize(sheet);
+                // A sheet outside the connector folder declares nothing the import made: never read it.
+                if (!FigmaPaths.TryResolveInside(profile.ConnectorFolder, sheet, out var path)) continue;
                 if (!File.Exists(path)) continue;
 
                 try
@@ -241,11 +243,19 @@ namespace Cuvara.UIToolkit.Editor.Figma
 
         private static void CheckModeSheets(FigmaProfileReport report, FigmaProfile profile, string folder, string profilePath)
         {
+            // An unusable connector folder is reported on its own; every sheet would repeat it.
+            if (folder.Length == 0) return;
             foreach (var sheet in profile.ModeSheets)
             {
                 if (string.IsNullOrWhiteSpace(sheet)) continue;
-                var path = folder + "/" + FigmaPaths.Normalize(sheet);
-                if (File.Exists(path)) continue;
+                if (!FigmaPaths.TryResolveInside(folder, sheet, out var path))
+                {
+                    report.Diagnostics.Add(FigmaPaths.Error(CodeModeSheetInvalid, profilePath,
+                        $"Mode sheet '{sheet}' must be a relative path inside the connector folder '{folder}' (no '..', no rooted or drive path). It is not read."));
+                    continue;
+                }
+
+                if (!report.ConnectorFolderFound || File.Exists(path)) continue;
                 report.Diagnostics.Add(FigmaPaths.Warning(CodeModeSheetMissing, profilePath,
                     $"Mode sheet '{sheet}' is not in '{folder}'."));
             }
