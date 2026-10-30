@@ -153,7 +153,8 @@ namespace Cuvara.UIToolkit.FigmaCore
                 foreach (var screen in manifest.Screens)
                 {
                     var uxmlName = screen.AssetName + ".uxml";
-                    if (screen.AssetName.Length > 0 && !File.Exists(Path.Combine(_folder, uxmlName)))
+                    var uxmlPath = InsideFolder(uxmlName);
+                    if (screen.AssetName.Length > 0 && (uxmlPath == null || !File.Exists(uxmlPath)))
                     {
                         Add(ScreenUxmlMissing, FigmaDiagnosticSeverity.Error, FigmaManifestReader.ManifestFileName, 0,
                             $"screen '{screen.AssetName}' (node {screen.RootNodeId}) has no {uxmlName}");
@@ -162,7 +163,15 @@ namespace Cuvara.UIToolkit.FigmaCore
                     foreach (var generated in screen.Generated)
                     {
                         if (string.Equals(generated, uxmlName, StringComparison.Ordinal)) continue; // reported above
-                        if (!File.Exists(Path.Combine(_folder, generated.Replace('/', Path.DirectorySeparatorChar))))
+                        var generatedPath = InsideFolder(generated);
+                        if (generatedPath == null)
+                        {
+                            // The connector only writes inside its folder; a path that leaves it is
+                            // not something an import produced, whether or not it exists.
+                            Add(GeneratedFileMissing, FigmaDiagnosticSeverity.Warning, FigmaManifestReader.ManifestFileName, 0,
+                                $"screen '{screen.AssetName}' lists generated file '{generated}', which is outside the import folder");
+                        }
+                        else if (!File.Exists(generatedPath))
                         {
                             Add(GeneratedFileMissing, FigmaDiagnosticSeverity.Warning, FigmaManifestReader.ManifestFileName, 0,
                                 $"screen '{screen.AssetName}' lists generated file '{generated}', which does not exist");
@@ -177,6 +186,11 @@ namespace Cuvara.UIToolkit.FigmaCore
                 if (sheet.Problem != null)
                 {
                     Add(UssMalformed, FigmaDiagnosticSeverity.Warning, file, sheet.ProblemLine, "USS is not well formed: " + sheet.Problem);
+                }
+
+                foreach (var import in sheet.Imports)
+                {
+                    CheckUrl(file, Path.GetDirectoryName(path), import.Line, import.Target);
                 }
 
                 var tokenSheet = IsTokenSheet(path, sheet);
@@ -388,6 +402,18 @@ namespace Cuvara.UIToolkit.FigmaCore
                 }
 
                 return Path.GetFullPath(Path.Combine(_projectRoot, path.Replace('/', Path.DirectorySeparatorChar)));
+            }
+
+            // Full path of a manifest entry relative to the import folder, or null when the
+            // entry is rooted or climbs out of the folder. Both slash styles are accepted.
+            private string InsideFolder(string relative)
+            {
+                var normalized = relative.Replace('\\', '/');
+                if (normalized.StartsWith("/", StringComparison.Ordinal) || Path.IsPathRooted(normalized)) return null;
+
+                var full = Path.GetFullPath(Path.Combine(_folder, normalized.Replace('/', Path.DirectorySeparatorChar)));
+                var root = _folder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                return full.StartsWith(root, StringComparison.OrdinalIgnoreCase) ? full : null;
             }
 
             private bool IsTokenSheet(string path, UssSheet sheet)
