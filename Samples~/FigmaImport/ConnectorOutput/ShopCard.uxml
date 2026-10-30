@@ -5,11 +5,11 @@
     <Style src="ShopCard.uss" />
     <Template name="PriceTag" src="PriceTag.uxml" />
     <ui:VisualElement style="flex-grow: 1; align-items: center; justify-content: center;">
-        <ui:VisualElement style="width: 360px; flex-direction: column; background-color: var(--surface-card); border-top-left-radius: var(--radius-md); border-top-right-radius: var(--radius-md); border-bottom-left-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md); padding-left: var(--spacing-lg); padding-right: var(--spacing-lg); padding-top: var(--spacing-lg); padding-bottom: var(--spacing-lg);">
-            <ui:VisualElement style="height: 160px; margin-bottom: var(--spacing-md); background-color: var(--surface-art); border-top-left-radius: var(--radius-sm); border-top-right-radius: var(--radius-sm); border-bottom-left-radius: var(--radius-sm); border-bottom-right-radius: var(--radius-sm); background-image: url(&quot;images/5e1a7c.png&quot;); -unity-background-scale-mode: scale-to-fit;" />
-            <ui:Label text="Ember Blade" style="color: var(--text-primary); font-size: 24px; -unity-font-style: bold;" />
-            <ui:Label text="A sword that never cools. +12 attack." style="color: var(--text-secondary); font-size: 14px; white-space: normal; margin-top: var(--spacing-sm);" />
-            <ui:VisualElement style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: var(--spacing-lg);">
+        <ui:VisualElement class="shop-card" style="width: 360px;">
+            <ui:VisualElement class="shop-card-art" style="height: 160px; background-image: url(&quot;images/5e1a7c.png&quot;); -unity-background-scale-mode: scale-to-fit;" />
+            <ui:Label text="Ember Blade" class="shop-card-title" />
+            <ui:Label text="A sword that never cools. +12 attack." class="shop-card-description" style="white-space: normal;" />
+            <ui:VisualElement style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: 24px;">
                 <ui:Instance template="PriceTag" class="shop-price-tag">
                     <AttributeOverrides element-name="text-0" text="250" />
                     <AttributeOverrides element-name="text-1" text="gold" />

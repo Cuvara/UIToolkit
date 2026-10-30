@@ -47,11 +47,13 @@ namespace Cuvara.UIToolkit.Samples.FigmaImport
         /// <summary>The key the host's IVisualTreeAssetLoader resolves to this view's UXML.</summary>
         public const string AssetKey = "ShopCard";
 
-        // The class the connector emits for the Figma components, with the profile's prefix
+        // The classes the connector emits for the Figma components, with the profile's prefix
         // "shop". Component classes are the most stable handle an import offers: they come
         // from the component name, not from the layer tree.
-        private const string BuyButtonClass = "shop-primary-button";
-        private const string PriceTagClass  = "shop-price-tag";
+        private const string TitleClass       = "shop-card-title";
+        private const string DescriptionClass = "shop-card-description";
+        private const string BuyButtonClass   = "shop-primary-button";
+        private const string PriceTagClass    = "shop-price-tag";
 
         public Label  ItemName    { get; }
         public Label  Description { get; }
@@ -62,12 +64,16 @@ namespace Cuvara.UIToolkit.Samples.FigmaImport
         {
             this.StretchToParent();
 
-            // Added by hand. Three ways to find an element in connector output, from most to
-            // least stable:
+            // Added by hand. Two ways to find an element in connector output:
             //
-            // 1. By component class. The Buy button is an instance of the "Primary Button"
-            //    component, so it carries shop-primary-button.
-            this.Buy = Find(this.Root.Q<Button>(className: BuyButtonClass), "the Buy button (class " + BuyButtonClass + ")");
+            // 1. By component class. The title, the description and the Buy button are
+            //    instances of Figma components ("Card Title", "Card Description", "Primary
+            //    Button"), so each carries its component's class. This is also why they can use
+            //    tokens at all: on Unity 6000.3 a token can only reach an element through a
+            //    class rule, because UI Toolkit does not support var() in inline styles.
+            this.ItemName    = Find(this.Root.Q<Label>(className: TitleClass), "the title (class " + TitleClass + ")");
+            this.Description = Find(this.Root.Q<Label>(className: DescriptionClass), "the description (class " + DescriptionClass + ")");
+            this.Buy         = Find(this.Root.Q<Button>(className: BuyButtonClass), "the Buy button (class " + BuyButtonClass + ")");
 
             // 2. By the template text name. Inside a template the connector names each TEXT
             //    layer text-<i>, in order, for AttributeOverrides. Scope the query to the
@@ -75,21 +81,10 @@ namespace Cuvara.UIToolkit.Samples.FigmaImport
             var priceTag = Find(this.Root.Q<VisualElement>(className: PriceTagClass), "the PriceTag instance (class " + PriceTagClass + ")");
             this.Price = Find(priceTag.Q<Label>("text-0"), "text-0 inside the PriceTag instance");
 
-            // 3. By structure. Plain TEXT layers get no name and no class, so they are found
-            //    by position: the first two labels of the card, in document order, before the
-            //    price tag. A designer who reorders these layers changes this, and the
-            //    exception below says so. If a screen needs many such lookups, wrap the
-            //    imported UXML in a game-owned UXML that names its own containers.
-            var labels = this.Root.Query<Label>().ToList();
-            if (labels.Count < 2 || priceTag.Contains(labels[0]) || priceTag.Contains(labels[1]))
-            {
-                throw new InvalidOperationException(
-                    "ShopCard.uxml no longer has the item name and description as its first two labels. "
-                    + "The Figma frame was restructured; update ShopCardView's structural lookup.");
-            }
-
-            this.ItemName    = labels[0];
-            this.Description = labels[1];
+            // A plain layer has neither a name nor a class. Find it by position
+            // (this.Root.Query<Label>().ToList()[i]) only as a last resort: a designer who
+            // reorders layers changes the result. If a screen needs many such lookups, wrap the
+            // imported UXML in a game-owned UXML that names its own containers.
         }
 
         private static T Find<T>(T element, string what) where T : VisualElement

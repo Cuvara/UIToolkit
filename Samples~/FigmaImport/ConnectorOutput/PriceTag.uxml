@@ -2,7 +2,7 @@
     <Style src="tokens.uss" />
     <Style src="PriceTag.uss" />
     <ui:VisualElement class="shop-price-tag">
-        <ui:Label name="text-0" text="0" style="color: var(--text-primary); font-size: 18px; -unity-font-style: bold;" />
-        <ui:Label name="text-1" text="gold" style="color: var(--text-secondary); font-size: 14px; margin-left: 4px;" />
+        <ui:Label name="text-0" text="0" class="shop-price-amount" />
+        <ui:Label name="text-1" text="gold" class="shop-price-unit" />
     </ui:VisualElement>
 </ui:UXML>

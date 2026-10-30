@@ -1,3 +1,37 @@
+.shop-card {
+    flex-direction: column;
+    background-color: var(--surface-card);
+    border-top-left-radius: var(--radius-md);
+    border-top-right-radius: var(--radius-md);
+    border-bottom-left-radius: var(--radius-md);
+    border-bottom-right-radius: var(--radius-md);
+    padding-left: var(--spacing-lg);
+    padding-right: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    padding-bottom: var(--spacing-lg);
+}
+
+.shop-card-art {
+    margin-bottom: var(--spacing-md);
+    background-color: var(--surface-art);
+    border-top-left-radius: var(--radius-sm);
+    border-top-right-radius: var(--radius-sm);
+    border-bottom-left-radius: var(--radius-sm);
+    border-bottom-right-radius: var(--radius-sm);
+}
+
+.shop-card-title {
+    color: var(--text-primary);
+    font-size: 24px;
+    -unity-font-style: bold;
+}
+
+.shop-card-description {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-top: var(--spacing-sm);
+}
+
 .shop-price-tag {
     flex-shrink: 0;
 }

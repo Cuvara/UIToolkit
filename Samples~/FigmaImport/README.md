@@ -50,13 +50,35 @@ Figma file ──(plugin push)──► connector ──► Assets/Figma/<file>/
   **Theme Mode Sheet** on `RootUIDocument`.
 - **Modes.** `ICuvaraThemeService.SetModeSheet` re-themes the built-in UI. An imported screen
   links its own `tokens.uss` and `light.uss`, and those re-declare the tokens on the screen's
-  root, below the document root. `FigmaModeSwitcher` therefore also re-links the active mode
-  sheet on each open imported screen. A presenter opts in with
-  `subs.Add(modes.Track(this.View.Root))`, so tracking ends when the screen closes.
+  root, below the document root. `ICuvaraThemeService.AttachScreen` keeps such a screen on the
+  current mode; `FigmaModeSwitcher` registers the two mode sheets and wraps it. A presenter
+  opts in with `subs.Add(modes.Track(this.View.Root))`, so the screen is released when it closes.
 - **Elements.** The connector emits no `name` attributes except `text-<i>` inside templates.
-  `ShopCardView` finds the Buy button by its component class (`shop-primary-button`), the
-  price by `text-0` inside the `shop-price-tag` instance, and the item name and description
-  by position. Each lookup throws a message that names what changed in Figma.
+  `ShopCardView` finds the item name, the description and the Buy button by their component
+  classes (`shop-card-title`, `shop-card-description`, `shop-primary-button`), and the price by
+  `text-0` inside the `shop-price-tag` instance. Each lookup throws a message that names what
+  changed in Figma.
+- **Tokens reach elements through class rules only.** Every `var(--token)` in the stand-in is
+  in a component class rule in `ShopCard.uss` or `PriceTag.uss`. Inline `style=` attributes
+  hold literal layout only (`width`, `height`, flex, the image). See the designer rule below.
+
+## Designer rule: bind tokens on components, not on plain layers
+
+UI Toolkit on Unity 6000.3 does not support `var()` inside an inline `style=` attribute.
+`VisualTreeAsset.CloneTree` fails on it with a `NullReferenceException` in
+`StyleVariableResolver.ResolveVariable`, so the screen cannot be opened at all.
+
+The connector writes a plain (non-component) layer's whole style inline, including
+`var(--token)` for every value bound to a Figma variable. A component instance gets a class
+rule in the screen's `.uss` instead, and its bound values go there. So, in Figma:
+
+- **Bind variables only on component instances** (colours, radii, spacing, text styles).
+  Turn a plain frame or text layer that needs a token into a component first.
+- **Leave plain layers unbound.** Their values stay literals, which is valid inline, but they
+  do not follow the theme or the light/dark mode.
+
+The validator's inline-`var()` rule reports a screen that breaks this rule. Fix the design in
+Figma and push again; never edit the imported UXML.
 
 ## Adopting it in your game
 
@@ -90,8 +112,9 @@ Figma file ──(plugin push)──► connector ──► Assets/Figma/<file>/
    and bindings by hand, as `ShopCardScreen.cs` shows.
 9. **Attach the theme:** overrides `tokens.uss`, then `cuvara-theme-bridge.uss`; mode sheet
    `light.uss` (code as in `FigmaImportSampleBootstrap`, or the `RootUIDocument` fields).
-10. **Switch modes** with `ICuvaraThemeService.SetModeSheet`, plus a re-link on open imported
-    screens as `FigmaModeSwitcher` does.
+10. **Switch modes** with `ICuvaraThemeService.SetModeSheet`. Declare the mode sheets with
+    `RegisterModeSheets` and attach each open imported screen with `AttachScreen`, as
+    `FigmaModeSwitcher` does, so the screen's own linked mode sheet follows the switch.
 
 Never edit files in `Assets/Figma/<file>/`. The next push rewrites them, and the connector's
 write-back would see your edits as design changes.
@@ -100,11 +123,14 @@ write-back would see your edits as design changes.
 
 - **No element names from Figma (gap G4, deferred).** Layer names do not reach the UXML, so the
   typed UXML codegen and `Require<T>("name")` have nothing to bind to. Node-id bindings wait
-  until a real import confirms the runtime element paths. Until then, query by component class,
-  by template `text-<i>` names, or by structure, as `ShopCardView` does; or wrap the imported
-  UXML in a game-owned UXML that names its own containers.
-- **Inline styles.** Plain layers carry their whole style inline. Only values bound to Figma
-  variables become `var(--token)` and follow the theme; unbound values stay literals.
+  until a real import confirms the runtime element paths. Until then, query by component class
+  or by template `text-<i>` names, as `ShopCardView` does, by position as a last resort, or
+  wrap the imported UXML in a game-owned UXML that names its own containers.
+- **No `var()` in inline styles.** Unity 6000.3 cannot clone a UXML whose inline `style=` holds
+  `var()` (see the designer rule). Plain layers therefore cannot follow the theme; only
+  component instances can.
+- **Inline styles.** Plain layers carry their whole style inline. Instances carry a class
+  rule plus an inline delta.
 - **PNG images.** The plugin rasterises vectors and image fills. They import as plain
   textures, not sprites and not vector graphics.
 - **Experimental connector.** `0.x` releases may change the files. The diagnostics window shows
@@ -115,10 +141,9 @@ write-back would see your edits as design changes.
 
 Found while building this sample; none is solved by the package yet.
 
-- **Mode switch does not reach imported screens.** Each screen links its resolved mode sheet,
-  which shadows the document-root mode sheet. The theme service has no way to re-link it and
-  no way to un-apply a root (`Apply` keeps every root it was given), so this sample carries
-  `FigmaModeSwitcher`. A package-level answer is needed.
+- **Tokens on plain layers break the screen.** The connector writes `var()` into inline styles
+  for plain layers, which Unity 6000.3 cannot clone. Until the connector or Unity changes, the
+  only safe design is tokens on components (see the designer rule).
 - **The profile stores project paths.** A profile cannot point at a folder whose path depends
   on a version (a sample import), and moving the game's folders breaks it silently until
   diagnostics run.
