@@ -1,0 +1,13 @@
+.shop-price-tag {
+    flex-direction: row;
+    align-items: center;
+    padding-left: var(--spacing-sm);
+    padding-right: var(--spacing-sm);
+    padding-top: 4px;
+    padding-bottom: 4px;
+    background-color: var(--surface-art);
+    border-top-left-radius: var(--radius-sm);
+    border-top-right-radius: var(--radius-sm);
+    border-bottom-left-radius: var(--radius-sm);
+    border-bottom-right-radius: var(--radius-sm);
+}

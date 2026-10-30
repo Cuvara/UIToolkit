@@ -1,0 +1,21 @@
+.shop-price-tag {
+    flex-shrink: 0;
+}
+
+.shop-primary-button {
+    height: 44px;
+    margin-left: 0;
+    margin-right: 0;
+    background-color: var(--brand-primary);
+    color: var(--brand-on-primary);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    border-top-left-radius: var(--radius-sm);
+    border-top-right-radius: var(--radius-sm);
+    border-bottom-left-radius: var(--radius-sm);
+    border-bottom-right-radius: var(--radius-sm);
+    font-size: 16px;
+    -unity-font-style: bold;
+}

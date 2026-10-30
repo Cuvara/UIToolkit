@@ -1,0 +1,19 @@
+{
+  "name": "Cuvara.UIToolkit.Samples.FigmaImport",
+  "rootNamespace": "Cuvara.UIToolkit.Samples.FigmaImport",
+  "references": [
+    "Cuvara.UIToolkit",
+    "Cuvara.UIToolkit.VContainer",
+    "UniTask",
+    "VContainer"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
