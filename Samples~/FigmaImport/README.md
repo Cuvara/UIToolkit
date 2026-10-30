@@ -74,7 +74,10 @@ The connector writes a plain (non-component) layer's whole style inline, includi
 rule in the screen's `.uss` instead, and its bound values go there. So, in Figma:
 
 - **Bind variables only on component instances** (colours, radii, spacing, text styles).
-  Turn a plain frame or text layer that needs a token into a component first.
+  Turn a plain frame or text layer that needs a token into a component first. Only the
+  component's root lands in a class rule; for text, use single-text components named
+  `<Role>/Label`, which the connector maps to `ui:Label` (verified with a real import, see the
+  package's `Documentation~/FIGMA-REAL-IMPORT.md`).
 - **Leave plain layers unbound.** Their values stay literals, which is valid inline, but they
   do not follow the theme or the light/dark mode.
 

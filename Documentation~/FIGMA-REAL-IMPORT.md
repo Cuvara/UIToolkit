@@ -268,3 +268,72 @@ The Release Lead fills this in for the record. "Source" names where the evidence
 
 Record the Unity version, connector and Pipeline versions (diagnostics window), plugin version (Figma
 plugin settings) and the saved result file with the evidence.
+
+## Recorded evidence (2026-10-31)
+
+Real imports through the official connector, driven headless with `Tools~/FigmaImport/figma-import.py`
+(`figma_import_url`) from Figma web with the **Unity UI Toolkit Connector** plugin connected to a lab
+project made by `Tools~/FigmaLab/create-lab-project.py`.
+
+- Unity `6000.3.9f1`, `com.unity.ui.figma` `0.3.0-exp.1`, `com.unity.pipeline` `0.9.1-exp.1`,
+  `com.cuvara.uitoolkit` from this branch (`file:`).
+- Test file: a 390x640 shop screen with a `Brand` variable collection (modes Light and Dark: 6 colours,
+  2 spacings, 1 radius), a `Button` component, an SVG icon, and Inter text.
+
+### Import 1: variables bound on plain layers (`ShopScreen`)
+
+| Item | Result |
+|---|---|
+| Import | `done` in 11 s, 13 nodes, files `ShopScreen.uxml`, `ShopScreen.uss`, `light.uss`, `dark.uss`, one PNG |
+| Connector facts | `MissingFonts` (Inter), `DroppedGap` x2 (no `gap` before Unity 6000.7), `MultiMode` (Light, Dark) |
+| Generated UXML | every bound property of a plain layer is written **inline** as `var(--token)` (screen fill, card fill, radius and padding, all text colours); the `Button` component maps to `ui:Button` with a `.button` class rule |
+| Validator | **11 x `FIG023`** (exit 1), one per inline `var()` |
+| Unity | `VisualTreeAsset.Instantiate()` on the imported `ShopScreen.uxml` throws `NullReferenceException` in `StyleVariableResolver.ResolveVariable`. The screen cannot be used on Unity 6000.3 |
+
+![Figma frame with variables on plain layers](images/figma-real-import/01-figma-shopscreen-bound-plain-layers.png)
+
+### Import 2: the designer rule (`ShopScreenSafe`)
+
+Variables only on component roots (`Card`, `Button`) and on single-text components named `<Role>/Label`
+(the connector maps them to `ui:Label` by name and folds the text style into the component class);
+plain layers keep literal values.
+
+| # | Check | Result |
+|---|---|---|
+| 1 | Hierarchy | Same order and nesting as Figma: heading, card (icon, title, body, price row with label and button) |
+| 2 | Layout | Auto layout became flex; the vector became an absolutely positioned image; `DroppedGap` x3 reported, so spacing between stacked items is tighter than Figma on 6000.3 |
+| 3 | Typography | Inter is not in the project: `MissingFonts` names it and the text falls back to the default font; sizes and weights match |
+| 4 | Colours | All tokens land in class rules (`.card`, `.button`, `.heading-label`, ...); validator `0 error(s), 1 warning(s)`: `FIG020` for the deliberately literal screen background |
+| 5 | Spacing and sizes | Padding 16/24/32 px and the 390x640 frame match Figma; gaps dropped (row 2) |
+| 6 | Images | `images/img-...png` imported, referenced as `project://database/...?guid=`, renders |
+| 7 | Asset references | Every `url()` and `<Style src>` resolves (validator), no Console import error |
+| 8 | Component mapping | `Button` -> `ui:Button`, `*/Label` -> `ui:Label` by the connector's name convention; **Apply Cuvara Mapping Preset** adds `SafeArea -> Cuvara.UIToolkit.Utilities.SafeAreaElement` to the connector's mapping asset (second run adds 0 rows). The preset needs the mapping asset to exist first (`cuvara.mapping.no-asset` otherwise). Class prefix `lab` on re-push gives `lab-card`, `lab-button`, ...; validator with `--prefix lab` reports no `FIG010` |
+| 9 | Theme | Profile + **Regenerate Token Bridges** wrote `cuvara-theme-bridge.uss` (8 roles, 0 diagnostics, bridge `Fresh`). With `ICuvaraThemeService` (bridge override, `RegisterModeSheets(light, dark)`, `AttachScreen`), light and dark switch both the imported screen and the built-in `ConfirmDialog` |
+| 10 | Unsupported features | Reported by the connector as facts: `MissingFonts`, `DroppedGap`; inline `var()` by the validator (`FIG023`) |
+| 11 | Re-push | Re-import rewrote only the 6 files in the connector folder; the profile, bridge and generated screen under `Assets/Game` kept their timestamps |
+| 12 | Screenshot | Below: Figma frame, then Unity Play mode (light with the themed dialog, dark, dark with dialog) |
+
+ScreenCreator, Source **Existing UXML**, produced `ShopScreenSafeView` / `ShopScreenSafePresenter` for
+the imported UXML; the lab scene constructs the view, shows it and attaches it to the theme. A view
+starts at alpha 0 until the navigator shows it.
+
+![Figma frame following the designer rule](images/figma-real-import/02-figma-shopscreensafe-designer-rule.png)
+![Unity, light, with the themed confirm dialog](images/figma-real-import/03-unity-shopscreensafe-light.png)
+![Unity, dark](images/figma-real-import/04-unity-shopscreensafe-dark.png)
+![Unity, dark, with the themed confirm dialog](images/figma-real-import/05-unity-shopscreensafe-dark-dialog.png)
+
+The sample (`Samples~/FigmaImport`) was also played in the same Editor: light, dark and the themed
+confirm dialog render with no exception.
+
+![Sample, dark, confirm dialog](images/figma-real-import/06-sample-dark-confirm.png)
+
+### Operational findings
+
+- `figma_import_url` matches the Figma file by the **name slug in the link**. After renaming a file,
+  copy a fresh link; an old slug returns `file_not_open`.
+- Two open files with the same name (for example two "(Copy)" duplicates, both with the plugin running)
+  return `ambiguous_file`; rename one.
+- In Figma **web**, Chrome asks "www.figma.com wants to access other apps and services on this device"
+  the first time the plugin connects; allow it, or use the Figma desktop app. Revoke it in Chrome's
+  site settings afterwards if you do not need it.
+- The plugin needs **edit** access to the file. On a view-only file, duplicate it to your drafts first.

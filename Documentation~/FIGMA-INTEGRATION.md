@@ -230,8 +230,17 @@ folder, for either source.
 > inline `var(--token)`. Put variable-bound styling on Figma **components**: the component's
 > values land in class rules in its `.uss`, where `var()` works. Instances carry an inline delta
 > for their overrides, so do not bind a variable as a per-instance override either. The
-> inline-var validator rule reports every such `style` attribute as an error before the screen
-> is opened.
+> inline-var validator rule (`FIG023`) reports every such `style` attribute as an error before
+> the screen is opened.
+>
+> Verified with a real import (see [FIGMA-REAL-IMPORT.md](FIGMA-REAL-IMPORT.md#recorded-evidence-2026-10-31)):
+> only the **component's own root** lands in a class rule. Layers *inside* a component are plain
+> layers again. For text colours and text styles, make each text role a single-text component
+> named `<Role>/Label` (for example `Title/Label`, `Body/Label`): the connector maps it to
+> `ui:Label` by name and folds the text style, including its bound colour, into the component's
+> class. Frames such as cards become components whose root carries the bound fill, radius and
+> padding. The screen root itself is a plain frame, so its background stays a literal (or comes
+> from the game's theme).
 
 What survives an import with connector `0.3.0-exp.1` on Unity 6000.3. Sources: the connector's
 own documentation and source (audit §2), and its troubleshooting page.
