@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Figma integration, Editor side (`Cuvara.UIToolkit.Editor.Figma`).** A new Editor-only
+  assembly for Unity's UI Toolkit Connector for Figma (`com.unity.ui.figma`). It is gated:
+  `versionDefines` sets `CUVARA_UITOOLKIT_FIGMA` for connector `0.3.0-exp.1` or later and
+  `defineConstraints` requires it, so without the connector nothing compiles in and nothing
+  changes. It has no reference to the connector's (all-internal) assembly and never edits a
+  file in a connector import folder. See `Documentation~/FIGMA-INTEGRATION.md`.
+  - `FigmaProfile` asset (**Assets > Create > Cuvara > UI Toolkit > Figma Profile**): one per
+    game or Figma file, with the connector folder, expected class prefix, token role map,
+    bridge output folder, mode sheets, and screens namespace and folder.
+  - Token bridge (**Tools > Cuvara > Figma > Regenerate Token Bridges**): writes a game-owned
+    `cuvara-theme-bridge.uss` of `--cuvara-x: var(--figma-y);` aliases. Deterministic and
+    content-gated; refuses a folder inside a connector folder; warns on Figma tokens the
+    import does not declare.
+  - Mapping preset (**Tools > Cuvara > Figma > Apply Cuvara Mapping Preset**): adds the Cuvara
+    control rows (`SafeArea` to `Cuvara.UIToolkit.Utilities.SafeAreaElement`) to the active
+    connector mapping asset through `SerializedObject`. Idempotent, never removes or changes a
+    user row, sets the class prefix only when empty, reports renamed properties as errors, and
+    checks that every typed `uitkControl` resolves to a `VisualElement`.
+  - Diagnostics window (**Window > Cuvara > Figma Diagnostics**): versions against the tested
+    range, active mapping asset and prefix, and per profile the manifest, screens, validator
+    results, token coverage and bridge freshness. An `AssetPostprocessor` re-validates after a
+    push (debounced, read-only) and logs one Console line per profile.
+- **Screen Creator: "Existing UXML (e.g. Figma import)" source.** Creates the view, presenter,
+  model and test for a UXML that already exists, writes no `.uxml` or `.uss`, and gives the
+  view a `public const string AssetKey` (default: the UXML file name) to register it with.
+  The default source is unchanged. File selection moved into the Unity-free
+  `ScreenCreatorPlan`. The wizard now refuses an output folder inside a connector import
+  folder (one holding `.figma-manifest.json`), for either source.
+- **CI: `figma-connector` job.** The test bootstrap plus `com.unity.ui.figma` `0.3.0-exp.1`, so
+  the gated assembly compiles and its EditMode tests run. Fails on zero executed tests and
+  when no `Cuvara.UIToolkit.Editor.Figma.Tests` case ran.
+
 ### Fixed
 
 - **CI: pinned `game-ci/unity-test-runner` to `v4.3.1`.** `Unity Tests`, `Compile samples`
