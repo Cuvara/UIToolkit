@@ -13,6 +13,12 @@ Requirements:
     connected to this Editor. The plugin does the export; without it the request
     expires after about 30 s.
 
+Result file: the final import result (the connector's FigmaImportResult, or the refusal for a
+request it never queued) is saved as JSON to <project>/Library/CuvaraFigma/last-import-<file>.json
+(--save-result to choose the path, --no-save-result to skip). The Figma Diagnostics window reads
+it, because a headless import leaves no other record of its notes (missing fonts, images that
+never arrived, dropped features).
+
 Exit codes (same as the UxmlCodegenCli validate verb):
   0  import done and ok (and, with --validate, no validator errors)
   1  import failed or expired, the import result is not ok, or the validator found errors
@@ -24,20 +30,27 @@ Python 3.8+, standard library only. See Documentation~/FIGMA-VALIDATION.md.
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 
 PORT_FILE = os.path.join("Library", "Pipeline", ".unity-pipeline-port")
+RESULT_FOLDER = os.path.join("Library", "CuvaraFigma")
+RESULT_PREFIX = "last-import-"
 FINISHED_STATES = ("done", "failed", "expired")
 HEARTBEAT_STALE_SECONDS = 60
 # figma_import_status waits behind a running import; Pipeline's timeout is in milliseconds.
 STATUS_TIMEOUT_MS = 120000
 QUEUE_TIMEOUT_MS = 60000
 BUSY_RETRY_SECONDS = 5
+# 503: Editor settling or blocked by a dialog. 504: timed out in the queue. 429: too many queued
+# commands. Pipeline runs nothing for any of them, and the same link returns the same request.
+RETRY_STATUSES = (429, 503, 504)
 
 
 class HelperError(Exception):
@@ -54,6 +67,82 @@ def find_project_root(start):
         if parent == directory:
             return None
         directory = parent
+
+
+def parse_heartbeat(text):
+    """Pipeline's lastHeartbeat (a Newtonsoft DateTime, e.g. 2026-10-30T15:22:14.1234567Z) as an
+    aware UTC datetime, or None. Python before 3.11 reads at most 6 fraction digits, so the 7th is cut."""
+    if not isinstance(text, str) or not text:
+        return None
+    value = text.strip().replace("Z", "+00:00")
+    value = re.sub(r"(\.\d{6})\d+", r"\1", value)
+    try:
+        seen = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if seen.tzinfo is None:
+        seen = seen.replace(tzinfo=timezone.utc)  # Pipeline writes DateTime.UtcNow
+    return seen
+
+
+def sanitize_name(name):
+    """The connector's file-name rule (FigmaPathGuard.SanitizeName): anything outside [A-Za-z0-9_-]
+    becomes '-', outer dashes trimmed. FigmaImportResultReader.SanitizeName is the C# twin."""
+    result = re.sub(r"[^A-Za-z0-9_-]", "-", name or "").strip("-")
+    return result or "import"
+
+
+def figma_file_name(url):
+    """The file name a Figma link carries (/design/<key>/<name>), or the file key, or ''."""
+    try:
+        parts = [p for p in urllib.parse.urlparse(url).path.split("/") if p]
+    except ValueError:
+        return ""
+    if len(parts) >= 3:
+        return urllib.parse.unquote(parts[2])
+    return parts[1] if len(parts) >= 2 else ""
+
+
+def result_document(reply, url):
+    """What --save-result writes: the connector's import result when the reply has one (a
+    FigmaImportResult as figma_import_status returns it), else the reply itself (a refusal or an
+    expired request: ok, code, error). A "request" object adds what only the helper knows."""
+    result = reply.get("result")
+    document = dict(result) if isinstance(result, dict) else {
+        key: reply[key] for key in ("ok", "code", "error") if key in reply}
+    document.setdefault("ok", False)
+    document["request"] = {
+        "requestId": reply.get("requestId", ""),
+        "state": reply.get("state", ""),
+        "code": reply.get("code", ""),
+        "error": reply.get("error", ""),
+        "reason": reply.get("reason", ""),
+        "fileName": reply.get("fileName") or figma_file_name(url),
+        "nodeId": reply.get("nodeId", ""),
+        "url": url,
+        "savedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "helper": "figma-import.py",
+    }
+    return document
+
+
+def save_result(path, document):
+    """Writes the result JSON (UTF-8, atomic replace). A failure is a warning: the import itself happened."""
+    try:
+        os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+        temp = path + ".tmp"
+        with open(temp, "w", encoding="utf-8", newline="\n") as handle:
+            json.dump(document, handle, indent=2, ensure_ascii=False)
+            handle.write("\n")
+        os.replace(temp, path)
+        print(f"result saved to {path}", file=sys.stderr)
+    except OSError as error:
+        print(f"warning: cannot save the result to {path}: {error}", file=sys.stderr)
+
+
+def default_result_path(project_root, document):
+    name = sanitize_name(document.get("request", {}).get("fileName", ""))
+    return os.path.join(project_root, RESULT_FOLDER, f"{RESULT_PREFIX}{name}.json")
 
 
 def read_port_file(project_root):
@@ -78,15 +167,11 @@ def read_port_file(project_root):
     if not port or not token:
         raise HelperError(f"{path} has no port or evalToken; is the Pipeline server running?")
 
-    heartbeat = descriptor.get("lastHeartbeat")
-    if heartbeat:
-        try:
-            seen = datetime.fromisoformat(heartbeat.replace("Z", "+00:00"))
-            age = (datetime.now(timezone.utc) - seen).total_seconds()
-            if age > HEARTBEAT_STALE_SECONDS:
-                print(f"warning: Pipeline heartbeat is {int(age)} s old; the Editor may be closed", file=sys.stderr)
-        except ValueError:
-            pass
+    seen = parse_heartbeat(descriptor.get("lastHeartbeat"))
+    if seen is not None:
+        age = (datetime.now(timezone.utc) - seen).total_seconds()
+        if age > HEARTBEAT_STALE_SECONDS:
+            print(f"warning: Pipeline heartbeat is {int(age)} s old; the Editor may be closed", file=sys.stderr)
     if descriptor.get("info"):
         print(f"note: {descriptor['info']}", file=sys.stderr)
     return port, token
@@ -126,9 +211,7 @@ class Pipeline:
                     envelope = json.loads(response.read().decode("utf-8"))
             except urllib.error.HTTPError as error:
                 text = error.read().decode("utf-8", "replace")
-                if error.code in (503, 504) and time.monotonic() < deadline:
-                    # Editor settling, blocked by a dialog, or the call timed out in the queue:
-                    # the same link returns the same request, so retrying is safe.
+                if error.code in RETRY_STATUSES and time.monotonic() < deadline:
                     print(f"pipeline busy (HTTP {error.code}), retrying in {BUSY_RETRY_SECONDS} s", file=sys.stderr)
                     time.sleep(BUSY_RETRY_SECONDS)
                     continue
@@ -183,8 +266,20 @@ def parse_args(argv):
     parser.add_argument("--cli", nargs="+", metavar="ARG",
                         help="with --validate: validator command prefix instead of 'dotnet run --project Tools~/UxmlCodegenCli --', "
                              "such as: dotnet /path/UxmlCodegenCli.dll (put it last: it takes every following argument)")
-    parser.add_argument("--dry-run", action="store_true", help="print the requests without sending them")
+    parser.add_argument("--save-result", metavar="PATH",
+                        help="where to save the final import result as JSON (default: "
+                             "<project>/Library/CuvaraFigma/last-import-<file>.json, read by Window > Cuvara > Figma Diagnostics)")
+    parser.add_argument("--no-save-result", action="store_true", help="do not save the import result")
+    parser.add_argument("--dry-run", action="store_true", help="print the requests without sending them (saves nothing)")
     return parser.parse_args(argv)
+
+
+def keep_result(args, project_root, reply):
+    """Saves the final reply's import result unless --no-save-result."""
+    if args.no_save_result:
+        return
+    document = result_document(reply, args.url)
+    save_result(args.save_result or default_result_path(project_root, document), document)
 
 
 def main(argv):
@@ -220,6 +315,7 @@ def main(argv):
             if reply.get("ok") is False and state is None:
                 # Refused before queueing (bad link, too many requests, unknown request).
                 print(json.dumps(reply, indent=2))
+                keep_result(args, project_root, reply)
                 return 1
             if state in FINISHED_STATES:
                 break
@@ -237,6 +333,7 @@ def main(argv):
             reply = pipeline.exec("figma_import_status", {"request_id": request_id}, STATUS_TIMEOUT_MS, deadline)
 
         print(json.dumps(reply, indent=2), flush=True)
+        keep_result(args, project_root, reply)
         result = reply.get("result") if isinstance(reply.get("result"), dict) else {}
         if reply.get("state") != "done" or not result.get("ok"):
             return 1
