@@ -54,7 +54,7 @@ Type and member names are unchanged (none contained "Penpot"): `UiMotion`, `Moti
 | `PenpotBridgeSettings.DefaultRoot` | removed | a project-specific folder has no place in the package |
 | `PenpotBridgeSettings.Roots`, `SetRoots`, `Reload`, `IsInScope`, `ProjectRoot`, `SettingsFile` | `SlicedArtSettings.*` | `IsInScope` is false while disabled; `Reload` also resets the switch |
 | `SliceSidecar` (`Suffix`, `version`, `border`, `pixelsPerUnit`, `maxSize`, `group`, `SidecarPathFor`, `PngPathFor`, `TryLoad`, `ToSpriteBorder`) | `Cuvara.UIToolkit.Editor.SlicedArt.SliceSidecar` | same; file format unchanged (`version` 1) |
-| `PenpotImportChecker` (`Check`, `CheckToJson`) | `Cuvara.UIToolkit.Editor.ImportCheck.UiImportChecker` | same; one error text now says "is the sliced art importer enabled and the file inside its roots?" |
+| `PenpotImportChecker` (`Check`, `CheckToJson`) | `Cuvara.UIToolkit.Editor.ImportCheck.UiImportChecker` | same; one error text now says "is a sprite importer configured for this file?" |
 | `CheckResult` (`Errors`, `Warnings`, `Logs`, `Checked`, `Pass`, `ToJson`) | `UiImportCheckResult` | same JSON keys |
 | internal `PenpotPaths.Resolve` | internal `AssetReferencePaths.Resolve` | same |
 | internal `PenpotJson` | internal `UiImportJson` | same |
