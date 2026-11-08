@@ -43,6 +43,12 @@ namespace Cuvara.UIToolkit.Editor.ImportCheck
     /// </summary>
     public static class UiImportChecker
     {
+        // Own copy: the checker must not depend on the sliced art importer's settings (it only reads the sidecar format).
+        static string ProjectRoot
+        {
+            get { return Path.GetDirectoryName(Application.dataPath).Replace('\\', '/'); }
+        }
+
         static readonly Regex UssUrl = new Regex(
             "url\\(\\s*(?:\"([^\"]*)\"|'([^']*)'|([^)\\s]+))\\s*\\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         static readonly Regex UssImportString = new Regex(
@@ -103,7 +109,7 @@ namespace Cuvara.UIToolkit.Editor.ImportCheck
         static List<string> ReferencesOf(string path)
         {
             var refs = new List<string>();
-            var full = Path.Combine(SlicedArtSettings.ProjectRoot, path);
+            var full = Path.Combine(ProjectRoot, path);
             if (!File.Exists(full))
                 return refs;
             var text = File.ReadAllText(full);
@@ -136,7 +142,7 @@ namespace Cuvara.UIToolkit.Editor.ImportCheck
                     var target = AssetReferencePaths.Resolve(path, raw);
                     // Missing targets are reported by CheckReference; here only existing checkable assets are followed.
                     if (target == null || !IsCheckable(target) ||
-                        !File.Exists(Path.Combine(SlicedArtSettings.ProjectRoot, target)))
+                        !File.Exists(Path.Combine(ProjectRoot, target)))
                         continue;
                     if (seen.Add(target))
                         queue.Enqueue(target);
@@ -168,7 +174,7 @@ namespace Cuvara.UIToolkit.Editor.ImportCheck
                             found[p] = true;
                     }
                 }
-                else if (!File.Exists(Path.Combine(SlicedArtSettings.ProjectRoot, path)))
+                else if (!File.Exists(Path.Combine(ProjectRoot, path)))
                 {
                     result.Errors.Add("Asset not found: " + path);
                 }
@@ -250,7 +256,7 @@ namespace Cuvara.UIToolkit.Editor.ImportCheck
             var target = AssetReferencePaths.Resolve(basePath, raw);
             if (target == null)
                 return;
-            var exists = File.Exists(Path.Combine(SlicedArtSettings.ProjectRoot, target)) &&
+            var exists = File.Exists(Path.Combine(ProjectRoot, target)) &&
                          AssetDatabase.AssetPathToGUID(target).Length > 0;
             if (!exists)
             {
@@ -266,7 +272,7 @@ namespace Cuvara.UIToolkit.Editor.ImportCheck
             if (!spritesChecked.Add(pngPath))
                 return;
             var sidecarPath = SliceSidecar.SidecarPathFor(pngPath);
-            if (!File.Exists(Path.Combine(SlicedArtSettings.ProjectRoot, sidecarPath)))
+            if (!File.Exists(Path.Combine(ProjectRoot, sidecarPath)))
                 return;
 
             if (!SliceSidecar.TryLoad(sidecarPath, out var sidecar, out var error))
@@ -281,7 +287,7 @@ namespace Cuvara.UIToolkit.Editor.ImportCheck
                 return;
             }
             if (importer.textureType != TextureImporterType.Sprite)
-                result.Errors.Add(pngPath + ": textureType is " + importer.textureType + ", expected Sprite (is the sliced art importer enabled and the file inside its roots?).");
+                result.Errors.Add(pngPath + ": textureType is " + importer.textureType + ", expected Sprite (is a sprite importer configured for this file?).");
 
             var expected = sidecar.ToSpriteBorder();
             var actual = importer.spriteBorder;
