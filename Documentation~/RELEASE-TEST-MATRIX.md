@@ -5,7 +5,8 @@ show before it is tagged. Use it as the checklist for a release candidate and as
 a CI job fails.
 
 Counts are test cases (one per `[Test]`, `[UnityTest]` or `[TestCase]` row). They were counted
-on branch `feat/uitoolkit/figma-qa` (2026-10-30). The dotnet harness counts were executed. The
+on branch `feat/uitoolkit/figma-qa` (2026-10-30); the motion, sliced art and import checker suites
+were added on `feat/uitoolkit/penpot-common` (2026-11-08, +92 and +17). The dotnet harness counts were executed. The
 Unity counts are static, because CI runs them. If you add or remove tests, update this table in
 the same change.
 
@@ -13,10 +14,11 @@ the same change.
 
 | Assembly / tool | Folder | Unity mode | CI job(s) | Connector needed | Cases |
 |---|---|---|---|---|---|
-| `Cuvara.UIToolkit.Editor.Tests` | `Tests/Editor/` (+ `FigmaCore/`) | EditMode | `test`, `figma-connector` | no | 306 |
+| `Cuvara.UIToolkit.Editor.Tests` | `Tests/Editor/` (+ `FigmaCore/`, `SlicedArt/`, `ImportCheck/`) | EditMode | `test`, `figma-connector` | no | 323 |
 | `Cuvara.UIToolkit.Editor.Figma.Tests` | `Tests/Editor/Figma/` | EditMode | `figma-connector` only | yes (gated) | 149 |
 | `Cuvara.UIToolkit.Tests` | `Tests/Runtime/` (root, `Collections/`, `TestSupport/`, `Theme/`, `ViewModel/`) | PlayMode | `test` | no | 218 |
 | `Cuvara.UIToolkit.Flow.Tests` | `Tests/Runtime/Flow/` | PlayMode | `test` | no | 109 |
+| `Cuvara.UIToolkit.Motion.Tests` | `Tests/Runtime/Motion/` | EditMode (Editor platform) | `test`, `figma-connector` | no | 92 |
 | `Cuvara.UIToolkit.Ecs.Tests` | `Tests/Runtime/Ecs/` | PlayMode | `test` (entities is in its manifest) | no (gated on `com.unity.entities`) | 20 |
 | `UxmlCodegenCli` drift check | `Tools~/UxmlCodegenCli/` | none (.NET 10) | client repo codegen-drift check | no | n/a |
 | `UxmlCodegenCli validate` on fixtures | `Tools~/UxmlCodegenCli/Fixtures/figma/` | none (.NET 10) | `validate` | no | 2 runs |
@@ -72,6 +74,8 @@ runs in both setups:
 | Profile paths and token bridge | `FigmaPathsTests`, `FigmaPathsQaTests`, `FigmaTokenBridgeTests`, `FigmaTokenBridgeQaTests` | bridge folder inside the connector folder; `..` segments in both folders; absolute Windows and Unix paths; backslashes; case differences; trailing slashes; empty, duplicate and invalid roles; absent, invalid, unknown and case-different Figma tokens; output always parses as one `:root` rule |
 | Theme runtime | `CuvaraThemeTests`, `CuvaraThemeServiceQaTests` | default sheet; component classes; inline fallback; sheet order base, overrides, mode across several roots and late roots; idempotent mode toggles; a mode that is also an override or the base; a service without a base sheet; nested `OverrideDefaultStyleSheet` |
 | Optional connector | `FigmaIsolationTests` | section 2 |
+| Motion helpers | `MotionDataTests`, `MotionTimelineTests` (fake target and driver, no panel) | easing curves and parsing; timing and values; preset JSON validation and the bridge's example presets; timeline of tweens, sequence, parallel, stagger, loop (ping-pong, skipped iterations, calls), cancel/complete/detach end states, transition-claim release on every exit path, input blocking. Real-panel PlayMode motion tests are still in penpot-uitoolkit-bridge ([PENPOT-BRIDGE-MOVE.md](PENPOT-BRIDGE-MOVE.md)) |
+| Sliced art importer and import checker | `SlicedArtImporterTests`, `SliceSidecarContractTests`, `UiImportCheckerTests` | sidecar-to-Unity border order and every applied importer setting; reimport on sidecar change; untouched without a sidecar, outside the roots and while disabled; the shared contract fixture; checker pass, unknown USS property, missing `url()`, border mismatch, UXML-only closure, nested `@import`, JSON keys |
 
 ## 4. Run it locally
 

@@ -15,6 +15,10 @@ On top of that core it ships:
 - `Require<T>` typed queries and a UXML-to-C# binding codegen
   ([UXML-CODEGEN.md](Documentation~/UXML-CODEGEN.md));
 - hybrid runtime data binding and an optional DOTS/ECS presentation adapter;
+- motion helpers for game-driven UI animation (`Cuvara.UIToolkit.Motion`: tweens, sequences,
+  loops, presets, input blocking; no dependencies) ([MOTION.md](Documentation~/MOTION.md));
+- an opt-in 9-slice art importer (PNG + `.slice.json` sidecar) and a strict UI import checker
+  for UXML/USS/sprite trees ([SLICED-ART.md](Documentation~/SLICED-ART.md));
 - an optional integration with Unity's **UI Toolkit Connector for Figma**: per-game profiles,
   a token bridge into the theme, a component mapping preset, a diagnostics window (including
   the notes of headless imports), an import validator and screen scaffolding over imported UXML
@@ -28,6 +32,9 @@ On top of that core it ships:
 | [UXML-CODEGEN.md](Documentation~/UXML-CODEGEN.md) | `Require<T>`, typed UXML bindings, the drift check |
 | [HYBRID-DATA-BINDING.md](Documentation~/HYBRID-DATA-BINDING.md) | runtime data binding behind the view interfaces |
 | [LIFECYCLE-PLAN.md](Documentation~/LIFECYCLE-PLAN.md) | screen lifecycle design |
+| [MOTION.md](Documentation~/MOTION.md) | the motion helpers: primitives, composition, control, end states, presets, cost |
+| [SLICED-ART.md](Documentation~/SLICED-ART.md) | the opt-in `.slice.json` 9-slice importer and the UI import checker |
+| [PENPOT-BRIDGE-MOVE.md](Documentation~/PENPOT-BRIDGE-MOVE.md) | what came from penpot-uitoolkit-bridge, the old-to-new name mapping, what moves later |
 | [FIGMA-INTEGRATION.md](Documentation~/FIGMA-INTEGRATION.md) | connector setup, profiles, token bridge, mapping preset, diagnostics, supported Figma features |
 | [FIGMA-VALIDATION.md](Documentation~/FIGMA-VALIDATION.md) | validator rules (`FIG0xx`), the `validate` CLI verb, the headless import helper |
 | [TROUBLESHOOTING-FIGMA.md](Documentation~/TROUBLESHOOTING-FIGMA.md) | connection problems and what to do about each diagnostic code |
@@ -205,7 +212,10 @@ public sealed class AddressablesVisualTreeAssetLoader : IVisualTreeAssetLoader
 | `Runtime/Input/` | back-navigation event source |
 | `Runtime/Theme/` | `CuvaraTheme.uss` (`--cuvara-*` theme contract), `ICuvaraThemeService` — see [THEMING.md](Documentation~/THEMING.md) |
 | `Runtime/Ecs/` | DOTS/ECS presentation adapter — optional, needs `com.unity.entities` |
+| `Runtime/Motion/` | `UiMotion`, `MotionHandle`, `MotionPresets` — game-driven UI animation (`Cuvara.UIToolkit.Motion`, no references); see [MOTION.md](Documentation~/MOTION.md) |
 | `Editor/Codegen/` | UXML → typed view codegen (menu + auto-regen); `Core/` is Unity-free |
+| `Editor/SlicedArt/` | `SlicedArtImporter`: PNG + `.slice.json` as a 9-slice Sprite, off unless `ProjectSettings/CuvaraSlicedArtSettings.json` enables it — see [SLICED-ART.md](Documentation~/SLICED-ART.md) |
+| `Editor/ImportCheck/` | `UiImportChecker`: strict reimport of a UXML/USS/PNG tree (logs, references, sprite borders) with a JSON result |
 | `Editor/ScreenCreator/` | **Assets > Cuvara > Create Screen**: view, presenter, model and test skeleton, for a new UXML or an existing (imported) one |
 | `Editor/FigmaCore/` | Unity-free validator for `com.unity.ui.figma` import folders — see [FIGMA-VALIDATION.md](Documentation~/FIGMA-VALIDATION.md) |
 | `Editor/Figma/` | optional Figma connector integration (profiles, token bridge, mapping preset, diagnostics); compiles only with `com.unity.ui.figma` — see [FIGMA-INTEGRATION.md](Documentation~/FIGMA-INTEGRATION.md) |
@@ -217,8 +227,8 @@ public sealed class AddressablesVisualTreeAssetLoader : IVisualTreeAssetLoader
 | `Samples~/EcsHud/` | a HUD driven from ECS, through the adapter — and the reference hybrid data-binding screen |
 | `Samples~/LoadingFlow/` | a two-scene loading-to-main flow using every navigator feature |
 | `Samples~/FigmaImport/` | a Figma connector import (stand-in files) driving a screen, the theme bridge and light/dark modes; see its `README.md` |
-| `Tests/Editor/` | EditMode tests: codegen, Screen Creator, the Figma validator core; `Tests/Editor/Figma/` runs only with the connector installed |
-| `Tests/Runtime/` | runtime tests: views, flow, theme, collections and (with `com.unity.entities`) ECS — most need a live panel |
+| `Tests/Editor/` | EditMode tests: codegen, Screen Creator, the Figma validator core, sliced art and the import checker; `Tests/Editor/Figma/` runs only with the connector installed |
+| `Tests/Runtime/` | runtime tests: views, flow, theme, collections, motion (EditMode, `Tests/Runtime/Motion/`) and (with `com.unity.entities`) ECS — most need a live panel |
 
 ## Theming
 

@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Motion helpers** (`Runtime/Motion/`, new assembly `Cuvara.UIToolkit.Motion`, namespace
+  `Cuvara.UIToolkit.Motion`, no references). Game-driven UI animation on UI Toolkit elements:
+  `UiMotion` primitives (fade, move, scale, rotate, tint, value, count-up), composition
+  (sequence, parallel, stagger, loop, wait, call), `MotionHandle` control (cancel, complete,
+  `await`, end states), input blocking and JSON presets (`MotionPresets`, `MotionPresetAsset`,
+  menu **Create > Cuvara > UI Toolkit > Motion Presets**). Copied from penpot-uitoolkit-bridge with
+  identical behaviour; only the namespace, assembly name and menu path changed. Tests:
+  `Cuvara.UIToolkit.Motion.Tests` (92 EditMode cases). See `Documentation~/MOTION.md`.
+- **Sliced art importer** (`Editor/SlicedArt/`, namespace `Cuvara.UIToolkit.Editor.SlicedArt`).
+  `SlicedArtImporter` imports a PNG with a sibling `<name>.slice.json` as an uncompressed 9-slice
+  Sprite; `SliceSidecar` reads the unchanged sidecar format. **Off by default**: it acts only when
+  `ProjectSettings/CuvaraSlicedArtSettings.json` sets `"enabled": true`, and only under its
+  `roots`, so it never runs next to the penpot-uitoolkit-bridge importer on the same files.
+  From the bridge's `PenpotArtImporter` / `PenpotBridgeSettings`, with the switch added and no
+  default root. See `Documentation~/SLICED-ART.md`.
+- **UI import checker** (`Editor/ImportCheck/`, namespace `Cuvara.UIToolkit.Editor.ImportCheck`).
+  `UiImportChecker.Check` / `CheckToJson` force-reimports a UXML/USS/PNG tree and its reachable
+  dependencies, fails on any logged warning or error, unresolved reference or sprite border that
+  differs from its sidecar, and returns `UiImportCheckResult` (`pass`, `errors`, `warnings`,
+  `logs`, `checked`). From the bridge's `PenpotImportChecker`. 17 EditMode cases with the importer.
+- `Documentation~/PENPOT-BRIDGE-MOVE.md`: inventory of the bridge's Unity package, what moved,
+  what moves later (prototype runner) and what stays, and the old-to-new name mapping.
+
 ## [0.8.0] - 2026-10-31
 
 Integration with Unity's official **UI Toolkit Connector for Figma** (`com.unity.ui.figma`,

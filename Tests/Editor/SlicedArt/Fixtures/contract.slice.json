@@ -1,0 +1,7 @@
+{
+ "version": 1,
+ "border": [4, 6, 8, 10],
+ "pixelsPerUnit": 100,
+ "maxSize": 2048,
+ "group": "ui"
+}
