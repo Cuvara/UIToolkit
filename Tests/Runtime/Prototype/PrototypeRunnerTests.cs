@@ -295,6 +295,13 @@ namespace Cuvara.UIToolkit.Prototype.Tests
         [UnityTest]
         public IEnumerator MouseLeaveTriggerOpensAnOverlayAtAManualPosition()
         {
+            // the Timer fixture without its after-delay navigation: on a slow renderer (CI) Boot's frames alone outlast the 1.2 s delay
+            // and the screen this test hovers was gone before the pointer reached it
+            var timer = m_Runner.Screens.Find(e => e.Name == "Timer");
+            timer.Flow = new TextAsset("{\"version\": 1, \"screen\": \"Timer\", \"interactions\": [" +
+                                       "{\"id\": \"Timer.Zone.mouse-leave#0\", \"element\": \"Zone\", \"trigger\": \"mouse-leave\", \"delayMs\": 0," +
+                                       " \"action\": \"open-overlay\", \"target\": \"Dialog\", \"position\": \"manual\", \"manual\": [50, 60]," +
+                                       " \"closeOnOutside\": true, \"scrim\": false}]}");
             m_Runner.StartScreen = "Timer";
             yield return Boot();
             var zone = Q("Zone");
@@ -365,7 +372,11 @@ namespace Cuvara.UIToolkit.Prototype.Tests
         public IEnumerator RenderedFrameIsNotBlackAndShowsTheScreenColour()
         {
             yield return Boot();
-            yield return new WaitForEndOfFrame();
+            // WaitForEndOfFrame is never evoked in batchmode (CI); there the panel has rendered into its target by the next frame
+            if (Application.isBatchMode)
+                yield return null;
+            else
+                yield return new WaitForEndOfFrame();
             var rt = m_Runner.RenderTarget;
             var previous = RenderTexture.active;
             RenderTexture.active = rt;

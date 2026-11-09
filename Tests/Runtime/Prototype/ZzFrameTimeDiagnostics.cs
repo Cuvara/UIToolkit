@@ -34,7 +34,52 @@ namespace Cuvara.UIToolkit.Prototype.Tests
         public IEnumerator FrameTimes()
         {
             yield return Probe(GetType().Name);
+            if (GetType() == typeof(ZzFrameTimeDiagnostics))
+            {
+                foreach (var kind in new[] { "Label", "Button", "Toggle", "TextField", "ScrollView", "ScrollViewLabels" })
+                    yield return ProbeElement(kind);
+            }
             Assert.Pass();
+        }
+
+        static IEnumerator ProbeElement(string kind)
+        {
+            var s = ScriptableObject.CreateInstance<PanelSettings>();
+            s.scaleMode = PanelScaleMode.ConstantPixelSize;
+            var rt = new RenderTexture(640, 360, 24);
+            rt.Create();
+            s.targetTexture = rt;
+            s.themeStyleSheet = TestTheme.Load();
+            var go = new GameObject("diag");
+            go.SetActive(false);
+            var doc = go.AddComponent<UIDocument>();
+            doc.panelSettings = s;
+            go.SetActive(true);
+            yield return null;
+            VisualElement e;
+            switch (kind)
+            {
+                case "Label": e = new Label("Row 0"); break;
+                case "Button": e = new Button { text = "Go" }; break;
+                case "Toggle": e = new Toggle("Check"); break;
+                case "TextField": e = new TextField(); break;
+                case "ScrollView": e = new ScrollView(); e.style.height = 200; break;
+                default:
+                    var sv = new ScrollView(); sv.style.height = 200;
+                    for (var i = 0; i < 8; i++) { var l = new Label("Row " + i); l.style.height = 50; sv.Add(l); }
+                    e = sv; break;
+            }
+            doc.rootVisualElement.Add(e);
+            yield return null;
+            yield return null;
+            var t0 = Time.realtimeSinceStartup;
+            for (var i = 0; i < 10; i++)
+                yield return null;
+            Debug.Log("[W9DIAG] element " + kind + ": " + ((Time.realtimeSinceStartup - t0) * 100f).ToString("0.0") + " ms/frame");
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(s);
+            rt.Release();
+            Object.DestroyImmediate(rt);
         }
 
         public static IEnumerator Probe(string name)

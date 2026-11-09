@@ -46,12 +46,6 @@ namespace Cuvara.UIToolkit.Prototype.Tests
             yield return Frames(3);
         }
 
-        [UnityTearDown]
-        public IEnumerator W9DiagTearDown()
-        {
-            yield return ZzFrameTimeDiagnostics.Probe("after " + TestContext.CurrentContext.Test.Name);
-        }
-
         [TearDown]
         public void TearDown()
         {
