@@ -33,6 +33,12 @@ namespace Cuvara.UIToolkit.Prototype.Tests
         [UnityTest]
         public IEnumerator FrameTimes()
         {
+            yield return Probe(GetType().Name);
+            Assert.Pass();
+        }
+
+        public static IEnumerator Probe(string name)
+        {
             var s = ScriptableObject.CreateInstance<PanelSettings>();
             s.scaleMode = PanelScaleMode.ScaleWithScreenSize;
             s.referenceResolution = new Vector2Int(1920, 1080);
@@ -56,12 +62,11 @@ namespace Cuvara.UIToolkit.Prototype.Tests
             var t0 = Time.realtimeSinceStartup;
             for (var i = 0; i < 10; i++)
                 yield return null;
-            Debug.Log("[W9DIAG] " + GetType().Name + ": " + ((Time.realtimeSinceStartup - t0) * 100f).ToString("0.0") + " ms/frame; " + FontStats(doc.rootVisualElement));
+            Debug.Log("[W9DIAG] " + name + ": " + ((Time.realtimeSinceStartup - t0) * 100f).ToString("0.0") + " ms/frame; " + FontStats(doc.rootVisualElement));
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(s);
             rt.Release();
             Object.DestroyImmediate(rt);
-            Assert.Pass();
         }
     }
 
