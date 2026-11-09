@@ -1,0 +1,8 @@
+{
+  "version": 1, "screen": "Timer", "overlay": false, "size": [1920, 1080], "flows": [],
+  "interactions": [
+    {"id": "Timer.Wait.after-delay#0", "element": "Wait", "trigger": "after-delay", "delayMs": 1200, "action": "navigate-to", "target": "Menu", "position": "", "manual": [], "closeOnOutside": false, "scrim": false},
+    {"id": "Timer.Zone.mouse-leave#0", "element": "Zone", "trigger": "mouse-leave", "delayMs": 0, "action": "open-overlay", "target": "Dialog", "position": "manual", "manual": [50, 60], "closeOnOutside": true, "scrim": false}
+  ],
+  "controls": [], "lists": [], "scrolls": []
+}

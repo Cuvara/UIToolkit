@@ -1,0 +1,10 @@
+{
+  "version": 1, "screen": "Detail", "overlay": false, "size": [1920, 1080], "flows": [],
+  "interactions": [
+    {"id": "Detail.BackButton.click#0", "element": "BackButton", "trigger": "click", "delayMs": 0, "action": "previous-screen", "target": "", "position": "", "manual": [], "closeOnOutside": false, "scrim": false},
+    {"id": "Detail.DialogButton.click#0", "element": "DialogButton", "trigger": "click", "delayMs": 0, "action": "open-overlay", "target": "Dialog", "position": "center", "manual": [], "closeOnOutside": true, "scrim": true},
+    {"id": "Detail.ToggleDialogButton.click#0", "element": "ToggleDialogButton", "trigger": "click", "delayMs": 0, "action": "toggle-overlay", "target": "Dialog", "position": "top-left", "manual": [], "closeOnOutside": false, "scrim": false},
+    {"id": "Detail.HoverTarget.mouse-enter#0", "element": "HoverTarget", "trigger": "mouse-enter", "delayMs": 0, "action": "open-overlay", "target": "Dialog", "position": "bottom-right", "manual": [], "closeOnOutside": true, "scrim": false}
+  ],
+  "controls": [], "lists": [], "scrolls": []
+}

@@ -1,0 +1,11 @@
+{
+  "version": 1, "screen": "Menu", "overlay": false, "size": [1920, 1080],
+  "flows": [{"name": "Main", "start": "Menu"}],
+  "interactions": [
+    {"id": "Menu.GoButton.click#0", "element": "GoButton", "trigger": "click", "delayMs": 0, "action": "navigate-to", "target": "Detail", "position": "", "manual": [], "closeOnOutside": false, "scrim": false},
+    {"id": "Menu.LockedButton.click#0", "element": "LockedButton", "trigger": "click", "delayMs": 0, "action": "navigate-to", "target": "Detail", "position": "", "manual": [], "closeOnOutside": false, "scrim": false}
+  ],
+  "controls": [{"name": "GoButton", "type": "Button", "enabled": true}, {"name": "LockedButton", "type": "Button", "enabled": false}],
+  "lists": [{"name": "Grid", "kind": "scroll", "template": "Cell", "selectable": true}],
+  "scrolls": [{"name": "Scroll", "mode": "Vertical"}]
+}

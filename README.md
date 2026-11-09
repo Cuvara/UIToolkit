@@ -17,6 +17,10 @@ On top of that core it ships:
 - hybrid runtime data binding and an optional DOTS/ECS presentation adapter;
 - motion helpers for game-driven UI animation (`Cuvara.UIToolkit.Motion`: tweens, sequences,
   loops, presets, input blocking; no dependencies) ([MOTION.md](Documentation~/MOTION.md));
+- a prototype runner that plays generated screens from a versioned `flow.json` (navigation,
+  overlays, back history, animated transitions, list selection, drag scrolling) and a UI input
+  simulator for tests (`Cuvara.UIToolkit.Prototype`; no dependencies)
+  ([PROTOTYPE-FLOW.md](Documentation~/PROTOTYPE-FLOW.md));
 - an opt-in 9-slice art importer (PNG + `.slice.json` sidecar) and a strict UI import checker
   for UXML/USS/sprite trees ([SLICED-ART.md](Documentation~/SLICED-ART.md));
 - an optional integration with Unity's **UI Toolkit Connector for Figma**: per-game profiles,
@@ -34,7 +38,8 @@ On top of that core it ships:
 | [LIFECYCLE-PLAN.md](Documentation~/LIFECYCLE-PLAN.md) | screen lifecycle design |
 | [MOTION.md](Documentation~/MOTION.md) | the motion helpers: primitives, composition, control, end states, presets, cost |
 | [SLICED-ART.md](Documentation~/SLICED-ART.md) | the opt-in `.slice.json` 9-slice importer and the UI import checker |
-| [PENPOT-BRIDGE-MOVE.md](Documentation~/PENPOT-BRIDGE-MOVE.md) | what came from penpot-uitoolkit-bridge, the old-to-new name mapping, what moves later |
+| [PROTOTYPE-FLOW.md](Documentation~/PROTOTYPE-FLOW.md) | the prototype runner and the `flow.json` v1 contract (version rule, fields, [schema](Documentation~/prototype-flow.schema.json)) |
+| [PENPOT-BRIDGE-MOVE.md](Documentation~/PENPOT-BRIDGE-MOVE.md) | what came from penpot-uitoolkit-bridge, the old-to-new name mapping, what stays in the bridge |
 | [FIGMA-INTEGRATION.md](Documentation~/FIGMA-INTEGRATION.md) | connector setup, profiles, token bridge, mapping preset, diagnostics, supported Figma features |
 | [FIGMA-VALIDATION.md](Documentation~/FIGMA-VALIDATION.md) | validator rules (`FIG0xx`), the `validate` CLI verb, the headless import helper |
 | [TROUBLESHOOTING-FIGMA.md](Documentation~/TROUBLESHOOTING-FIGMA.md) | connection problems and what to do about each diagnostic code |
@@ -213,6 +218,7 @@ public sealed class AddressablesVisualTreeAssetLoader : IVisualTreeAssetLoader
 | `Runtime/Theme/` | `CuvaraTheme.uss` (`--cuvara-*` theme contract), `ICuvaraThemeService` — see [THEMING.md](Documentation~/THEMING.md) |
 | `Runtime/Ecs/` | DOTS/ECS presentation adapter — optional, needs `com.unity.entities` |
 | `Runtime/Motion/` | `UiMotion`, `MotionHandle`, `MotionPresets` — game-driven UI animation (`Cuvara.UIToolkit.Motion`, no references); see [MOTION.md](Documentation~/MOTION.md) |
+| `Runtime/Prototype/` | `PrototypeRunner`, `UiInputSimulator`, `PrototypeFlowFile` — plays screens from `flow.json` v1 (`Cuvara.UIToolkit.Prototype`, no references); see [PROTOTYPE-FLOW.md](Documentation~/PROTOTYPE-FLOW.md) |
 | `Editor/Codegen/` | UXML → typed view codegen (menu + auto-regen); `Core/` is Unity-free |
 | `Editor/SlicedArt/` | `SlicedArtImporter`: PNG + `.slice.json` as a 9-slice Sprite, off unless `ProjectSettings/CuvaraSlicedArtSettings.json` enables it — see [SLICED-ART.md](Documentation~/SLICED-ART.md) |
 | `Editor/ImportCheck/` | `UiImportChecker`: strict reimport of a UXML/USS/PNG tree (logs, references, sprite borders) with a JSON result |
@@ -228,7 +234,7 @@ public sealed class AddressablesVisualTreeAssetLoader : IVisualTreeAssetLoader
 | `Samples~/LoadingFlow/` | a two-scene loading-to-main flow using every navigator feature |
 | `Samples~/FigmaImport/` | a Figma connector import (stand-in files) driving a screen, the theme bridge and light/dark modes; see its `README.md` |
 | `Tests/Editor/` | EditMode tests: codegen, Screen Creator, the Figma validator core, sliced art and the import checker; `Tests/Editor/Figma/` runs only with the connector installed |
-| `Tests/Runtime/` | runtime tests: views, flow, theme, collections, motion (EditMode, `Tests/Runtime/Motion/`) and (with `com.unity.entities`) ECS — most need a live panel |
+| `Tests/Runtime/` | runtime tests: views, flow, theme, collections, motion (EditMode, `Tests/Runtime/Motion/`), the prototype runner (PlayMode, `Tests/Runtime/Prototype/`) and (with `com.unity.entities`) ECS — most need a live panel |
 
 ## Theming
 

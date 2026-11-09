@@ -1,0 +1,8 @@
+{
+  "version": 1, "screen": "Scrolls", "overlay": false, "size": [1920, 1080],
+  "flows": [{"name": "Main", "start": "Scrolls"}],
+  "interactions": [],
+  "controls": [],
+  "lists": [],
+  "scrolls": [{"name": "HBar", "mode": "Horizontal"}, {"name": "WrapList", "mode": "Vertical"}, {"name": "Fits", "mode": "Horizontal"}]
+}

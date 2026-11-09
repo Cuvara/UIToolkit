@@ -124,6 +124,10 @@ namespace Cuvara.UIToolkit.Motion.Tests
             var fade = presets["fade"];
             Assert.AreEqual(MotionChannels.Opacity, fade.Channels);
             Assert.AreEqual(120f, fade.Timing.DurationMs);
+            var hoverFade = presets["hover-fade"];
+            Assert.IsTrue(hoverFade.Crossfade);
+            Assert.AreEqual(200f, hoverFade.Timing.DurationMs);
+            Assert.AreEqual(MotionChannels.TextColor, hoverFade.Channels);
         }
 
         [Test]
