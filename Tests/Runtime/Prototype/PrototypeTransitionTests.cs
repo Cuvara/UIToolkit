@@ -76,10 +76,7 @@ namespace Cuvara.UIToolkit.Prototype.Tests
 
         IEnumerator Boot()
         {
-            // 640x360, not 1920x1080: the panel still lays out at the 1920x1080 reference (ScaleWithScreenSize), but CI renders with
-            // a software rasteriser (llvmpipe), where a 1920x1080 frame took about 600 ms and a 300 ms transition showed no
-            // intermediate frame. The motion tests use the same size.
-            m_Runner.UseRenderTarget(640, 360);
+            m_Runner.UseRenderTarget(1920, 1080);
             m_Runner.Begin();
             yield return Frames(3);
         }

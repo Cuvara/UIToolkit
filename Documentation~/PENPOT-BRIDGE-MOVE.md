@@ -21,7 +21,7 @@ prerequisites 1 and 2 (N production screens, X weeks of a stable API) hold. Sour
 | `PenpotArtImporterTests`, `SliceSidecarContractTests`, `PenpotImportCheckerTests`, `TempFolder` (16 cases) | **moved now** (+1 case) | `Tests/Editor/SlicedArt/`, `Tests/Editor/ImportCheck/` (17 cases) |
 | `PenpotPrototypeRunner`, `PenpotInputSimulator`, `PenpotClicks`, `PenpotFlow` types, `PenpotTransition`, `PenpotMotionSheets`, `PenpotTransitionSignal`, `PenpotPointerWarmUp` | **moved in A2** | `Runtime/Prototype/`, own assembly `Cuvara.UIToolkit.Prototype`, no references. [PROTOTYPE-FLOW.md](PROTOTYPE-FLOW.md) |
 | `flow.json` format | **moved in A2** as a versioned contract | [PROTOTYPE-FLOW.md](PROTOTYPE-FLOW.md), [prototype-flow.schema.json](prototype-flow.schema.json); the writer (`bridge/flow.py`) stays in the bridge |
-| PlayMode tests: `PenpotPrototypeRunnerTests` (17), `PenpotTransitionTests` (17), `PenpotMotionTests` (31 cases, 28 methods), `PenpotOwnershipTests` (4 of 6), `PenpotScrollTests` (3) | **moved in A2** | `Tests/Runtime/Prototype/`, `Cuvara.UIToolkit.Prototype.Tests` (PlayMode, 72 cases + 11 new `flow.json` contract cases) |
+| PlayMode tests: `PenpotPrototypeRunnerTests` (17), `PenpotTransitionTests` (17), `PenpotMotionTests` (28), `PenpotOwnershipTests` (4 of 6), `PenpotScrollTests` (3) | **moved in A2** | `Tests/Runtime/Prototype/`, `Cuvara.UIToolkit.Prototype.Tests` (PlayMode, 69 cases + 11 new `flow.json` contract cases) |
 | `PenpotGate7Tests`, `PenpotGate8Tests`, the two gate-7 expectation cases of `PenpotOwnershipTests`, `PenpotPreviewSceneTests` | **stays** | bridge quality gates; they need `PenpotPrototypeEditorHost`, the client's screens or its preview scene |
 | `PenpotBindingsTests`, `Generated/ClashBindings.g.cs` | **stays** | they test the bridge's bindings generator; `Generated/MenuBindings.g.cs` is copied as a fixture of the transition-signal test |
 | Bindings convention (`<Screen>Bindings`) | **stays** as a convention | this package already has `Require<T>` and its own UXML codegen; the bridge generator stays in the bridge |
@@ -80,10 +80,7 @@ Member names, constants (`SelectedClass` = `selected`, `SelectedElementName` = `
 `selection-mark`, `MotionSheets.Suffix` = `.motion`) and behaviour are unchanged: apart from the names above, the `.cs` files differ
 from the bridge only in doc comments and the version error text. The tests differ in names and in three places: the theme comes
 from a fixture `.tss` that imports Unity's default runtime theme (the bridge found `UnityDefaultRuntimeTheme` in the client), the
-scroll probe of gate 7 is a test helper (`ScrollProbe`), and the two gate-7 expectation cases of the ownership tests stayed. The
-runner and transition tests render into a 640x360 target instead of 1920x1080 (the layout is still at the 1920x1080 reference):
-CI renders with a software rasteriser, where a full-size frame took about 600 ms and the timing tests failed. In batchmode the
-rendered-frame test waits one frame instead of `WaitForEndOfFrame`, which batchmode never evokes.
+scroll probe of gate 7 is a test helper (`ScrollProbe`), and the two gate-7 expectation cases of the ownership tests stayed.
 
 The `.meta` GUIDs are new, as in phase A: both packages are installed in the client until phase B, and duplicate GUIDs would
 collide. A scene or prefab that references `PenpotPrototypeRunner` by script GUID must be migrated in Unity in phase B, never by
