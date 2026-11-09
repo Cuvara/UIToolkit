@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Cuvara/UIToolkit/Documentation~/prototype-flow.schema.json",
+  "title": "Prototype flow file (<Screen>.flow.json), version 1",
+  "description": "What Cuvara.UIToolkit.Prototype.PrototypeRunner plays for one screen. Written by the penpot-uitoolkit-bridge converter (bridge/flow.py build_flow). See PROTOTYPE-FLOW.md for the version rule and the meaning of each field. Fields not listed here are allowed and ignored by the runner (the converter writes more for its own gates).",
+  "type": "object",
+  "required": ["version", "screen"],
+  "properties": {
+    "version": { "const": 1, "description": "Major version of the format. The runner rejects any other value." },
+    "screen": { "type": "string", "minLength": 1, "description": "Screen name; the runner's PrototypeScreenEntry.Name." },
+    "overlay": { "type": "boolean", "description": "True when another screen opens this one as an overlay. Informational." },
+    "size": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2, "description": "Board size [width, height] in px. Informational." },
+    "flows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "start": { "type": ["string", "null"], "description": "Start screen of the flow (used when the runner has no StartScreen)." }
+        }
+      }
+    },
+    "interactions": { "type": "array", "items": { "$ref": "#/$defs/interaction" } },
+    "controls": { "type": "array", "items": { "$ref": "#/$defs/control" } },
+    "lists": { "type": "array", "items": { "$ref": "#/$defs/list" } },
+    "scrolls": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "description": "Name of a ScrollView in the screen; the runner adds drag scrolling." },
+          "mode": { "type": "string", "description": "Vertical | Horizontal | VerticalAndHorizontal (informational: the ScrollView's own mode is used)." }
+        }
+      }
+    },
+    "motion": {
+      "type": "object",
+      "description": "Motion policy of the profile. Missing: back = reverse, enabled = true.",
+      "properties": {
+        "back": { "enum": ["reverse", "none"], "description": "What previous-screen plays: the reverse of the navigation it undoes, or nothing." },
+        "enabled": { "type": "boolean", "description": "false: no screen or overlay transition is animated." }
+      }
+    }
+  },
+  "$defs": {
+    "interaction": {
+      "type": "object",
+      "required": ["id", "element", "trigger", "action"],
+      "properties": {
+        "id": { "type": "string", "description": "<Screen>.<element>.<trigger>#<index>, stable across syncs." },
+        "element": { "type": "string", "description": "Name of the element in the screen's UXML." },
+        "trigger": { "enum": ["click", "mouse-enter", "mouse-leave", "after-delay"] },
+        "delayMs": { "type": ["number", "null"], "description": "after-delay only; null reads as 0." },
+        "action": { "enum": ["navigate-to", "open-overlay", "toggle-overlay", "close-overlay", "previous-screen"] },
+        "target": { "type": ["string", "null"], "description": "Destination screen; close-overlay without one closes the overlay that contains the element." },
+        "position": {
+          "type": ["string", "null"],
+          "description": "Overlay position: center (default), top-left, top-center, top-right, bottom-left, bottom-center, bottom-right, manual."
+        },
+        "manual": { "type": ["array", "null"], "items": { "type": "number" }, "description": "manual position [x, y] in px." },
+        "closeOnOutside": { "type": ["boolean", "null"] },
+        "scrim": { "type": ["boolean", "null"] },
+        "animation": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "required": ["type", "durationMs", "easing"],
+              "properties": {
+                "type": { "enum": ["dissolve", "slide", "push"] },
+                "durationMs": { "type": "number", "minimum": 0, "description": "Below 1 the interaction is not animated." },
+                "easing": { "enum": ["linear", "ease", "ease-in", "ease-out", "ease-in-out"] },
+                "way": { "enum": ["in", "out", null], "description": "slide only." },
+                "direction": { "enum": ["left", "right", "up", "down", null], "description": "slide and push: direction of motion." },
+                "offsetEffect": { "type": ["boolean", "null"], "description": "slide between screens only." }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "control": {
+      "type": "object",
+      "required": ["name", "type", "enabled"],
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "description": "C# type of the element: Button, Toggle, TextField." },
+        "enabled": { "type": "boolean" },
+        "motion": { "type": ["string", "null"], "description": "Motion preset name of the control." }
+      }
+    },
+    "list": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "description": "Name of the list element (a ListView, a ScrollView or a plain container)." },
+        "kind": { "type": "string", "description": "listview | scroll | ... (informational)." },
+        "template": { "type": "string", "description": "Name of the item template UXML (informational)." },
+        "selectable": { "type": "boolean", "description": "true: single selection (class selected, Selected element)." }
+      }
+    }
+  }
+}

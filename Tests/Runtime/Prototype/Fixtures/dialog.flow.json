@@ -1,0 +1,8 @@
+{
+  "version": 1, "screen": "Dialog", "overlay": true, "size": [400, 240], "flows": [],
+  "interactions": [
+    {"id": "Dialog.YesButton.click#0", "element": "YesButton", "trigger": "click", "delayMs": 0, "action": "close-overlay", "target": "", "position": "", "manual": [], "closeOnOutside": false, "scrim": false},
+    {"id": "Dialog.NoButton.click#0", "element": "NoButton", "trigger": "click", "delayMs": 0, "action": "close-overlay", "target": "", "position": "", "manual": [], "closeOnOutside": false, "scrim": false}
+  ],
+  "controls": [], "lists": [], "scrolls": []
+}

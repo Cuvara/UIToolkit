@@ -27,6 +27,17 @@
       "states": []
     },
     {
+      "name": "hover-fade",
+      "duration": "normal",
+      "easing": "ease-out",
+      "delayMs": 0,
+      "properties": [
+        "color"
+      ],
+      "crossfade": true,
+      "states": []
+    },
+    {
       "name": "press",
       "duration": "fast",
       "easing": "ease-out",

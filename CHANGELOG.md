@@ -7,8 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-09
+
+Common parts of penpot-uitoolkit-bridge move into this package (phases A and A2 of
+`Documentation~/PENPOT-BRIDGE-MOVE.md`): the prototype runner, the motion helpers, the sliced art
+importer and the UI import checker. Nothing existing changed; every new assembly is standalone.
+
 ### Added
 
+- **Prototype runner** (`Runtime/Prototype/`, new assembly `Cuvara.UIToolkit.Prototype`, namespace
+  `Cuvara.UIToolkit.Prototype`, no references). `PrototypeRunner` plays generated screens from
+  `<Screen>.flow.json`: navigate, back history, stacked overlays with scrim and close-on-outside,
+  after-delay and hover triggers, dissolve/slide/push transitions with USS transitions, input
+  blocking during a transition, single selection in lists and drag scrolling. `UiInputSimulator`
+  sends real pointer, wheel and key events through a panel; `UiClicks`, `ScreenTransitionSignal`
+  and `MotionSheets` complete it. Copied from the bridge's `PenpotPrototypeRunner` and its helpers
+  with identical behaviour, including the Mono warm-up of the pointer enter/leave dispatch on a
+  worker thread; type names lose "Penpot", host element names start with `Prototype`, the log
+  prefix is `[Cuvara.UIToolkit]`. Tests: `Cuvara.UIToolkit.Prototype.Tests` (83 PlayMode cases,
+  including the 31 live-panel motion cases that stayed in the bridge in phase A).
+- **`flow.json` contract, version 1** (`Documentation~/PROTOTYPE-FLOW.md`,
+  `Documentation~/prototype-flow.schema.json`). `version` is the major; the runner rejects any
+  other value (`PrototypeFlowFile.SupportedVersion`), changes within a major are additive only.
 - **Motion helpers** (`Runtime/Motion/`, new assembly `Cuvara.UIToolkit.Motion`, namespace
   `Cuvara.UIToolkit.Motion`, no references). Game-driven UI animation on UI Toolkit elements:
   `UiMotion` primitives (fade, move, scale, rotate, tint, value, count-up), composition
@@ -17,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   menu **Create > Cuvara > UI Toolkit > Motion Presets**). Copied from penpot-uitoolkit-bridge with
   identical behaviour; only the namespace, assembly name and menu path changed. Tests:
   `Cuvara.UIToolkit.Motion.Tests` (92 EditMode cases). See `Documentation~/MOTION.md`.
+  In sync with the bridge's main at `3b490b1` (the example presets include `hover-fade`).
 - **Sliced art importer** (`Editor/SlicedArt/`, namespace `Cuvara.UIToolkit.Editor.SlicedArt`).
   `SlicedArtImporter` imports a PNG with a sibling `<name>.slice.json` as an uncompressed 9-slice
   Sprite; `SliceSidecar` reads the unchanged sidecar format. **Off by default**: it acts only when
@@ -30,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   differs from its sidecar, and returns `UiImportCheckResult` (`pass`, `errors`, `warnings`,
   `logs`, `checked`). From the bridge's `PenpotImportChecker`. 17 EditMode cases with the importer.
 - `Documentation~/PENPOT-BRIDGE-MOVE.md`: inventory of the bridge's Unity package, what moved,
-  what moves later (prototype runner) and what stays, and the old-to-new name mapping.
+  what stays in the bridge, and the old-to-new name mapping.
 
 ## [0.8.0] - 2026-10-31
 

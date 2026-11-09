@@ -1,0 +1,24 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="Menu" style="width: 100%; height: 100%; background-color: rgb(30, 30, 30);">
+        <ui:Button name="GoButton" text="Go" style="position: absolute; left: 100px; top: 100px; width: 200px; height: 60px; background-color: rgb(0, 0, 255);" />
+        <ui:Button name="LockedButton" text="Locked" enabled="false" style="position: absolute; left: 100px; top: 200px; width: 200px; height: 60px; background-color: rgb(80, 80, 80);" />
+        <ui:Toggle name="Check" label="Check" style="position: absolute; left: 100px; top: 300px;" />
+        <ui:TextField name="Name" value="" style="position: absolute; left: 100px; top: 340px; width: 300px;" />
+        <ui:VisualElement name="Tag" style="position: absolute; left: 100px; top: 420px; width: 100px; height: 40px; background-color: rgb(200, 100, 0);" />
+        <ui:ScrollView name="Scroll" mode="Vertical" style="position: absolute; left: 500px; top: 100px; width: 300px; height: 200px;">
+            <ui:Label text="Row 0" name="Row0" style="height: 50px;" />
+            <ui:Label text="Row 1" name="Row1" style="height: 50px;" />
+            <ui:Label text="Row 2" name="Row2" style="height: 50px;" />
+            <ui:Label text="Row 3" name="Row3" style="height: 50px;" />
+            <ui:Label text="Row 4" name="Row4" style="height: 50px;" />
+            <ui:Label text="Row 5" name="Row5" style="height: 50px;" />
+            <ui:Label text="Row 6" name="Row6" style="height: 50px;" />
+            <ui:Label text="Row 7" name="Row7" style="height: 50px;" />
+        </ui:ScrollView>
+        <ui:ScrollView name="Grid" mode="Vertical" style="position: absolute; left: 900px; top: 100px; width: 400px; height: 200px;">
+            <ui:VisualElement name="Cell0" style="width: 100px; height: 60px; background-color: rgb(60, 60, 60);"><ui:VisualElement name="Selected" style="display: none; width: 100px; height: 60px; background-color: rgb(255, 215, 0);" /></ui:VisualElement>
+            <ui:VisualElement name="Cell1" style="width: 100px; height: 60px; background-color: rgb(90, 90, 90);"><ui:VisualElement name="Selected" style="display: none; width: 100px; height: 60px; background-color: rgb(255, 215, 0);" /></ui:VisualElement>
+            <ui:VisualElement name="Cell2" style="width: 100px; height: 60px; background-color: rgb(60, 60, 60);"><ui:VisualElement name="Selected" style="display: none; width: 100px; height: 60px; background-color: rgb(255, 215, 0);" /></ui:VisualElement>
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>
