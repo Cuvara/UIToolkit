@@ -133,5 +133,10 @@ matching test removal is a finding.
 - XML error line numbers come from the runtime's `XmlReader`. CI runs them under Unity's Mono, the
   local harness under CoreCLR; a difference there shows up as a line-number failure in
   `FigmaImportValidatorQaTests.MalformedUxml_*`.
+- CI renders with a software rasteriser (llvmpipe). Once the motion suite has run, a frame of a
+  themed screen with text takes 0.5-1.5 s there (1 ms before it; measured 2026-11-09, cause not
+  found). The seven checks (six tests) of `PrototypeTransitionTests` that sample a running transition between
+  its ends then report **inconclusive** with the measured frame gap; they only run to a verdict in
+  an Editor with a GPU. Count them in the release notes as inconclusive, not as passed.
 - The connector itself (import, write-back, Pipeline commands) is not exercised by any automated
   test. `Tools~/FigmaImport/figma-import.py` needs a running Editor and a Figma token.

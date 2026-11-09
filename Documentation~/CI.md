@@ -65,6 +65,9 @@ Stated because a green run is easy to over-read:
 - **No real input.** The back-navigation tests synthesise `NavigationCancelEvent`. That a real
   Android back press, a gamepad B, or Escape produces one at the panel root is Unity dispatch
   behaviour and is untested here.
+- **No smooth frames.** The runners render with a software rasteriser; frames of a themed screen
+  get slow during the run, and the prototype transition checks that sample in-between frames
+  report inconclusive there ([RELEASE-TEST-MATRIX.md](RELEASE-TEST-MATRIX.md#6-known-gaps)).
 - **No IL2CPP and no stripping.** Nothing is built for Android or WebGL.
 - **Samples are compiled, not run.** The `Compile samples` job copies every declared sample
   under `Assets/` (Unity does not import `Samples~` itself) and compiles it. No sample scene is
