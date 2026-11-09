@@ -439,15 +439,17 @@ namespace Cuvara.UIToolkit.Prototype.Tests
             yield return Boot();
             Click("GoButton");
             yield return WaitIdle();
+            var clock = new FrameClock();
             Click("DialogButton");
-            yield return Frames(3);
+            clock.Tick();
+            yield return Frames(3); // the slide starts once the overlay's layout is stable: these frames count for the sampling too
+            clock.Tick();
             var content = m_Runner.OverlayRoot("Dialog");
             Assert.IsNotNull(content);
             var minX = 0f;
             var log = new System.Text.StringBuilder();
             var t0 = Time.realtimeSinceStartup;
             var until = t0 + 2f;
-            var clock = new FrameClock();
             while (m_Runner.IsTransitioning && Time.realtimeSinceStartup < until)
             {
                 clock.Tick();

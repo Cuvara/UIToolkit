@@ -21,7 +21,7 @@ prerequisites 1 and 2 (N production screens, X weeks of a stable API) hold. Sour
 | `PenpotArtImporterTests`, `SliceSidecarContractTests`, `PenpotImportCheckerTests`, `TempFolder` (16 cases) | **moved now** (+1 case) | `Tests/Editor/SlicedArt/`, `Tests/Editor/ImportCheck/` (17 cases) |
 | `PenpotPrototypeRunner`, `PenpotInputSimulator`, `PenpotClicks`, `PenpotFlow` types, `PenpotTransition`, `PenpotMotionSheets`, `PenpotTransitionSignal`, `PenpotPointerWarmUp` | **moved in A2** | `Runtime/Prototype/`, own assembly `Cuvara.UIToolkit.Prototype`, no references. [PROTOTYPE-FLOW.md](PROTOTYPE-FLOW.md) |
 | `flow.json` format | **moved in A2** as a versioned contract | [PROTOTYPE-FLOW.md](PROTOTYPE-FLOW.md), [prototype-flow.schema.json](prototype-flow.schema.json); the writer (`bridge/flow.py`) stays in the bridge |
-| PlayMode tests: `PenpotPrototypeRunnerTests` (17), `PenpotTransitionTests` (17), `PenpotMotionTests` (28), `PenpotOwnershipTests` (4 of 6), `PenpotScrollTests` (3) | **moved in A2** | `Tests/Runtime/Prototype/`, `Cuvara.UIToolkit.Prototype.Tests` (PlayMode, 69 cases + 11 new `flow.json` contract cases) |
+| PlayMode tests: `PenpotPrototypeRunnerTests` (17), `PenpotTransitionTests` (17), `PenpotMotionTests` (31 cases, 28 methods), `PenpotOwnershipTests` (4 of 6), `PenpotScrollTests` (3) | **moved in A2** | `Tests/Runtime/Prototype/`, `Cuvara.UIToolkit.Prototype.Tests` (PlayMode, 72 cases + 11 new `flow.json` contract cases) |
 | `PenpotGate7Tests`, `PenpotGate8Tests`, the two gate-7 expectation cases of `PenpotOwnershipTests`, `PenpotPreviewSceneTests` | **stays** | bridge quality gates; they need `PenpotPrototypeEditorHost`, the client's screens or its preview scene |
 | `PenpotBindingsTests`, `Generated/ClashBindings.g.cs` | **stays** | they test the bridge's bindings generator; `Generated/MenuBindings.g.cs` is copied as a fixture of the transition-signal test |
 | Bindings convention (`<Screen>Bindings`) | **stays** as a convention | this package already has `Require<T>` and its own UXML codegen; the bridge generator stays in the bridge |
@@ -78,9 +78,16 @@ the namespace line, the `InternalsVisibleTo` names, the menu path and doc commen
 
 Member names, constants (`SelectedClass` = `selected`, `SelectedElementName` = `Selected`, `SelectionMarkClass` =
 `selection-mark`, `MotionSheets.Suffix` = `.motion`) and behaviour are unchanged: apart from the names above, the `.cs` files differ
-from the bridge only in doc comments and the version error text. The tests differ in names and in three places: the theme comes
-from a fixture `.tss` that imports Unity's default runtime theme (the bridge found `UnityDefaultRuntimeTheme` in the client), the
-scroll probe of gate 7 is a test helper (`ScrollProbe`), and the two gate-7 expectation cases of the ownership tests stayed.
+from the bridge only in doc comments and the version error text. The tests differ in names and in these places, all for CI: the
+theme comes from a fixture `.tss` that imports Unity's default runtime theme (the bridge found `UnityDefaultRuntimeTheme` in the
+client); the scroll probe of gate 7 is a test helper (`ScrollProbe`); the two gate-7 expectation cases of the ownership tests
+stayed. CI renders with a software rasteriser (llvmpipe) where a frame of a themed screen took 0.5-1.5 s, so the seven checks
+that sample a running transition between its ends (dissolve, slide in, push, back reverse, overlay dissolve, overlay slide)
+report inconclusive instead of failing when the frames were further apart than half the transition (the motion tests'
+`RequireFrames` policy); the rest of each test still asserts. The mouse-leave test uses the Timer fixture without its
+after-delay navigation (1.2 s, outlasted by three slow frames), the after-delay test records the screens it saw instead of reading
+the current one after those frames, and the rendered-frame test waits one frame instead of
+`WaitForEndOfFrame` in batchmode, which never evokes it.
 
 The `.meta` GUIDs are new, as in phase A: both packages are installed in the client until phase B, and duplicate GUIDs would
 collide. A scene or prefab that references `PenpotPrototypeRunner` by script GUID must be migrated in Unity in phase B, never by

@@ -285,11 +285,23 @@ namespace Cuvara.UIToolkit.Prototype.Tests
         [UnityTest]
         public IEnumerator AfterDelayTriggerFiresOnItsOwn()
         {
+            // recorded rather than read after Boot: on a slow renderer (CI) Boot's three frames can outlast the 1.2 s delay
+            var shown = new System.Collections.Generic.List<string>();
+            var menuAfter = -1f;
+            var begun = Time.realtimeSinceStartup;
+            m_Runner.ScreenShown += (name, root) =>
+            {
+                shown.Add(name);
+                if (name == "Menu" && menuAfter < 0f)
+                    menuAfter = Time.realtimeSinceStartup - begun;
+            };
             m_Runner.StartScreen = "Timer";
             yield return Boot();
-            Assert.AreEqual("Timer", m_Runner.CurrentScreen);
+            Assert.AreEqual("Timer", shown[0], "the Timer screen is shown first");
             yield return new WaitForSecondsRealtime(1.7f);
             Assert.AreEqual("Menu", m_Runner.CurrentScreen, "after-delay -> navigate-to");
+            CollectionAssert.AreEqual(new[] { "Timer", "Menu" }, shown);
+            Assert.GreaterOrEqual(menuAfter, 1.15f, "not before its 1200 ms delay");
         }
 
         [UnityTest]

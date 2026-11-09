@@ -24,8 +24,8 @@ importer and the UI import checker. Nothing existing changed; every new assembly
   and `MotionSheets` complete it. Copied from the bridge's `PenpotPrototypeRunner` and its helpers
   with identical behaviour, including the Mono warm-up of the pointer enter/leave dispatch on a
   worker thread; type names lose "Penpot", host element names start with `Prototype`, the log
-  prefix is `[Cuvara.UIToolkit]`. Tests: `Cuvara.UIToolkit.Prototype.Tests` (80 PlayMode cases,
-  including the 28 live-panel motion tests that stayed in the bridge in phase A).
+  prefix is `[Cuvara.UIToolkit]`. Tests: `Cuvara.UIToolkit.Prototype.Tests` (83 PlayMode cases,
+  including the 31 live-panel motion cases that stayed in the bridge in phase A).
 - **`flow.json` contract, version 1** (`Documentation~/PROTOTYPE-FLOW.md`,
   `Documentation~/prototype-flow.schema.json`). `version` is the major; the runner rejects any
   other value (`PrototypeFlowFile.SupportedVersion`), changes within a major are additive only.
