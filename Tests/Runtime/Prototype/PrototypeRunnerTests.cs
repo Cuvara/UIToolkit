@@ -61,9 +61,12 @@ namespace Cuvara.UIToolkit.Prototype.Tests
                 Object.DestroyImmediate(m_Object);
         }
 
-        IEnumerator Boot()
+        // 640x360 unless a test is about the full-size frame: the panel still lays out at the 1920x1080 reference
+        // (ScaleWithScreenSize), and CI renders with a software rasteriser (llvmpipe) where a 1920x1080 frame took about 600 ms,
+        // long enough for the Timer screen's after-delay to fire during Boot.
+        IEnumerator Boot(int width = 640, int height = 360)
         {
-            m_Runner.UseRenderTarget(1920, 1080);
+            m_Runner.UseRenderTarget(width, height);
             m_Runner.Begin();
             yield return Frames(3);
         }
@@ -100,7 +103,7 @@ namespace Cuvara.UIToolkit.Prototype.Tests
         [UnityTest]
         public IEnumerator ScreenIsLaidOutAtThe1920x1080ReferenceAndRendersNonBlack()
         {
-            yield return Boot();
+            yield return Boot(1920, 1080);
             var root = m_Runner.Document.rootVisualElement;
             Assert.AreEqual("Menu", m_Runner.CurrentScreen);
             Assert.AreEqual(1920f, root.layout.width, 1f, "UI width: PanelSettings reference resolution");
@@ -364,8 +367,12 @@ namespace Cuvara.UIToolkit.Prototype.Tests
         [UnityTest]
         public IEnumerator RenderedFrameIsNotBlackAndShowsTheScreenColour()
         {
-            yield return Boot();
-            yield return new WaitForEndOfFrame();
+            yield return Boot(1920, 1080);
+            // WaitForEndOfFrame is never evoked in batchmode (CI); there the panel has rendered into its target by the next frame
+            if (Application.isBatchMode)
+                yield return null;
+            else
+                yield return new WaitForEndOfFrame();
             var rt = m_Runner.RenderTarget;
             var previous = RenderTexture.active;
             RenderTexture.active = rt;

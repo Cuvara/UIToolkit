@@ -7,7 +7,7 @@ a CI job fails.
 Counts are test cases (one per `[Test]`, `[UnityTest]` or `[TestCase]` row). They were counted
 on branch `feat/uitoolkit/figma-qa` (2026-10-30); the motion, sliced art and import checker suites
 were added on `feat/uitoolkit/penpot-common` (2026-11-08, +92 and +17), the prototype runner suite on
-`feat/uitoolkit/prototype-runner` (2026-11-09, +80). The dotnet harness counts were executed. The
+`feat/uitoolkit/prototype-runner` (2026-11-09, +83). The dotnet harness counts were executed. The
 Unity counts are static, because CI runs them. If you add or remove tests, update this table in
 the same change.
 
@@ -20,7 +20,7 @@ the same change.
 | `Cuvara.UIToolkit.Tests` | `Tests/Runtime/` (root, `Collections/`, `TestSupport/`, `Theme/`, `ViewModel/`) | PlayMode | `test` | no | 218 |
 | `Cuvara.UIToolkit.Flow.Tests` | `Tests/Runtime/Flow/` | PlayMode | `test` | no | 109 |
 | `Cuvara.UIToolkit.Motion.Tests` | `Tests/Runtime/Motion/` | EditMode (Editor platform) | `test`, `figma-connector` | no | 92 |
-| `Cuvara.UIToolkit.Prototype.Tests` | `Tests/Runtime/Prototype/` | PlayMode | `test` | no | 80 |
+| `Cuvara.UIToolkit.Prototype.Tests` | `Tests/Runtime/Prototype/` | PlayMode | `test` | no | 83 |
 | `Cuvara.UIToolkit.Ecs.Tests` | `Tests/Runtime/Ecs/` | PlayMode | `test` (entities is in its manifest) | no (gated on `com.unity.entities`) | 20 |
 | `UxmlCodegenCli` drift check | `Tools~/UxmlCodegenCli/` | none (.NET 10) | client repo codegen-drift check | no | n/a |
 | `UxmlCodegenCli validate` on fixtures | `Tools~/UxmlCodegenCli/Fixtures/figma/` | none (.NET 10) | `validate` | no | 2 runs |
@@ -77,7 +77,7 @@ runs in both setups:
 | Theme runtime | `CuvaraThemeTests`, `CuvaraThemeServiceQaTests` | default sheet; component classes; inline fallback; sheet order base, overrides, mode across several roots and late roots; idempotent mode toggles; a mode that is also an override or the base; a service without a base sheet; nested `OverrideDefaultStyleSheet` |
 | Optional connector | `FigmaIsolationTests` | section 2 |
 | Motion helpers | `MotionDataTests`, `MotionTimelineTests` (fake target and driver, no panel) | easing curves and parsing; timing and values; preset JSON validation and the bridge's example presets; timeline of tweens, sequence, parallel, stagger, loop (ping-pong, skipped iterations, calls), cancel/complete/detach end states, transition-claim release on every exit path, input blocking. The real-panel motion tests are in `PrototypeMotionTests` (next row) |
-| Prototype runner and `flow.json` | `PrototypeRunnerTests`, `PrototypeTransitionTests`, `PrototypeMotionTests`, `PrototypeOwnershipTests`, `PrototypeScrollTests`, `PrototypeFlowContractTests` (real panel, real pointer events through `UiInputSimulator`) | navigate, back history, overlays (stacked, scrim, close outside, toggle), after-delay, disabled controls, hover, list selection and selection marks, drag scroll on both axes; dissolve/slide/push transitions, reverse on back, input blocking and the single transition-end signal, motion sheets detached when not animating; the pointer warm-up; render-target and panel-settings ownership; the motion helpers on a live panel (28); `flow.json` version rule ([PROTOTYPE-FLOW.md](PROTOTYPE-FLOW.md)) |
+| Prototype runner and `flow.json` | `PrototypeRunnerTests`, `PrototypeTransitionTests`, `PrototypeMotionTests`, `PrototypeOwnershipTests`, `PrototypeScrollTests`, `PrototypeFlowContractTests` (real panel, real pointer events through `UiInputSimulator`) | navigate, back history, overlays (stacked, scrim, close outside, toggle), after-delay, disabled controls, hover, list selection and selection marks, drag scroll on both axes; dissolve/slide/push transitions, reverse on back, input blocking and the single transition-end signal, motion sheets detached when not animating; the pointer warm-up; render-target and panel-settings ownership; the motion helpers on a live panel (31); `flow.json` version rule ([PROTOTYPE-FLOW.md](PROTOTYPE-FLOW.md)) |
 | Sliced art importer and import checker | `SlicedArtImporterTests`, `SliceSidecarContractTests`, `UiImportCheckerTests` | sidecar-to-Unity border order and every applied importer setting; reimport on sidecar change; untouched without a sidecar, outside the roots and while disabled; the shared contract fixture; checker pass, unknown USS property, missing `url()`, border mismatch, UXML-only closure, nested `@import`, JSON keys |
 
 ## 4. Run it locally
